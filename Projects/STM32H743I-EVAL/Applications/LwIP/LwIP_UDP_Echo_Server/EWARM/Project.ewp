@@ -366,6 +366,7 @@
                     <state>$PROJ_DIR$/../../../../../../Utilities</state>
                     <state>$PROJ_DIR$/../../../../../../Utilities/LCD</state>
                     <state>$PROJ_DIR$/../../../../../../Utilities/Lcd_Trace</state>
+                    <state>$PROJ_DIR$/../../../../../../Drivers/BSP/Components/lan8742</state>
                 </option>
                 <option>
                     <name>CCStdIncCheck</name>
@@ -1262,6 +1263,9 @@
                 <name>Core</name>
                 <group>
                     <name>IPv4</name>
+                    <file>
+                        <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\LwIP\src\core\ipv4\acd.c</name>
+                    </file>
                     <file>
                         <name>$PROJ_DIR$\..\..\..\..\..\..\Middlewares\Third_Party\LwIP\src\core\ipv4\autoip.c</name>
                     </file>

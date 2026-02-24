@@ -21,7 +21,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "cmsis_os.h"
+#include "cmsis_os2.h"
 #include "ethernetif.h"
 #include "lwip/netif.h"
 #include "lwip/tcpip.h"
@@ -30,17 +30,40 @@
 #ifdef USE_LCD
 #include "lcd_trace.h"
 #endif
-
+#include <string.h>
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
+#define INTERFACE_THREAD_STACK_SIZE ( 1024 )
 struct netif gnetif; /* network interface structure */
+/* Definitions for Start */
+osThreadId_t StartHandle;
+const osThreadAttr_t Start_attributes = {
+  .name = "Start",
+  .stack_size = 256 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
 
+osThreadAttr_t attributes;
+osThreadId_t LinkHandle;
+osThreadId_t DHCPHandle;
+
+const osThreadAttr_t EthLinkThread_attributes = {
+  .name = "EthLink",
+  .stack_size = 256 * 4,
+  .priority = osPriorityNormal
+};
+
+const osThreadAttr_t DHCPThread_attributes = {
+  .name = "DHCP",
+  .stack_size = 256 * 4,
+  .priority = osPriorityBelowNormal
+};
 /* Private function prototypes -----------------------------------------------*/
 static void SystemClock_Config(void);
 static void BSP_Config(void);
-static void StartThread(void const * argument);
+void StartThread(void* argument);
 static void Netif_Config(void);
 static void MPU_Config(void);
 static void CPU_CACHE_Enable(void);
@@ -74,8 +97,10 @@ int main(void)
   BSP_Config();
 
   /* Init thread */
-  osThreadDef(Start, StartThread, osPriorityNormal, 0, configMINIMAL_STACK_SIZE * 4);
-  osThreadCreate (osThread(Start), NULL);
+  osKernelInitialize();
+
+  /* Creation of Start thread */
+  StartHandle = osThreadNew(StartThread, NULL, &Start_attributes);
 
   /* Start scheduler */
   osKernelStart();
@@ -89,7 +114,7 @@ int main(void)
   * @param  argument not used
   * @retval None
   */
-static void StartThread(void const * argument)
+void StartThread(void* argument)
 {
   /* Create tcp_ip stack thread */
   tcpip_init(NULL, NULL);
@@ -99,11 +124,11 @@ static void StartThread(void const * argument)
 
   /* Initialize webserver demo */
   http_server_netconn_init();
-
+  /* Infinite loop */
   for( ;; )
   {
     /* Delete the Init Thread */
-    osThreadTerminate(NULL);
+    osThreadTerminate(StartHandle);
   }
 }
 
@@ -132,6 +157,7 @@ static void BSP_Config(void)
   BSP_LED_Init(LED1);
   BSP_LED_Init(LED2);
 #endif
+
 }
 
 /**
@@ -165,15 +191,12 @@ static void Netif_Config(void)
 
 #if LWIP_NETIF_LINK_CALLBACK
   netif_set_link_callback(&gnetif, ethernet_link_status_updated);
-
-  osThreadDef(EthLink, ethernet_link_thread, osPriorityNormal, 0, configMINIMAL_STACK_SIZE *2);
-  osThreadCreate (osThread(EthLink), &gnetif);
+  LinkHandle = osThreadNew(ethernet_link_thread, &gnetif, &EthLinkThread_attributes);
 #endif
 
 #if LWIP_DHCP
   /* Start DHCPClient */
-  osThreadDef(DHCP, DHCP_Thread, osPriorityBelowNormal, 0, configMINIMAL_STACK_SIZE * 2);
-  osThreadCreate (osThread(DHCP), &gnetif);
+  DHCPHandle = osThreadNew(DHCP_Thread, &gnetif, &DHCPThread_attributes);
 #endif
 }
 
@@ -357,6 +380,19 @@ static void CPU_CACHE_Enable(void)
 
   /* Enable D-Cache */
   SCB_EnableDCache();
+}
+
+/**
+  * @brief  This function is executed in case of error occurrence.
+  * @param  None
+  * @retval None
+  */
+void Error_Handler(void)
+{
+  /* User may add here some code to deal with this error */
+  while(1)
+  {
+  }
 }
 
 #ifdef  USE_FULL_ASSERT

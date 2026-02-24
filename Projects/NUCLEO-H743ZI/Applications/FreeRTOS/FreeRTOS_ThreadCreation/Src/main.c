@@ -18,17 +18,23 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "cmsis_os.h"
+#include "cmsis_os2.h"
+#include "FreeRTOS.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-osThreadId LEDThread1Handle, LEDThread2Handle;
+osThreadId_t THREAD1Handle;
+osThreadId_t THREAD2Handle;
+static osThreadAttr_t attr = {
+                        .priority = osPriorityNormal,
+                        .stack_size = configMINIMAL_STACK_SIZE,
+                      };
 /* Private function prototypes -----------------------------------------------*/
 static void MPU_Config(void);
-static void LED_Thread1(void const *argument);
-static void LED_Thread2(void const *argument);
+static void LED_Thread1(void *argument);
+static void LED_Thread2(void *argument);
 static void SystemClock_Config(void);
 static void CPU_CACHE_Enable(void);
 /* Private functions ---------------------------------------------------------*/
@@ -52,8 +58,8 @@ int main(void)
          timer for application or other time source), keeping in mind that Time base
          duration should be kept 1ms since PPP_TIMEOUT_VALUEs are defined and
          handled in milliseconds basis.
-         This application uses FreeRTOS, the RTOS initializes the systick to generate an interrupt each 1ms. 
-         The systick is then used for FreeRTOS time base.  
+         This application uses FreeRTOS, the RTOS initializes the systick to generate an interrupt each 1ms.
+         The systick is then used for FreeRTOS time base.
        - Set NVIC Group Priority to 4
        - Low Level Initialization: global MSP (MCU Support Package) initialization
    */
@@ -65,25 +71,26 @@ int main(void)
   /* Initialize LEDs */
   BSP_LED_Init(LED1);
   BSP_LED_Init(LED2);
- 
 
-  /* Thread 1 definition */
-  osThreadDef(LED1, LED_Thread1, osPriorityNormal, 0, configMINIMAL_STACK_SIZE);
-  
-  /*  Thread 2 definition */
-  osThreadDef(LED2, LED_Thread2, osPriorityNormal, 0, configMINIMAL_STACK_SIZE);
+  osKernelInitialize();
 
-  /* Start thread 1 */
-  LEDThread1Handle = osThreadCreate(osThread(LED1), NULL);
-
-  /* Start thread 2 */
-  LEDThread2Handle = osThreadCreate(osThread(LED2), NULL);
+  /* Create the thread(s) */
+  /* definition and creation of THREAD1 */
+  attr.name = "THREAD1";
+  THREAD1Handle = osThreadNew(LED_Thread1, NULL, (const osThreadAttr_t *)&attr);
+  /* definition and creation of THREAD2 */
+  attr.name = "THREAD2";
+  THREAD2Handle = osThreadNew(LED_Thread2, NULL, (const osThreadAttr_t *)&attr);
 
   /* Start scheduler */
   osKernelStart();
 
   /* We should never get here as control is now taken by the scheduler */
-  for (;;);
+  /* Infinite loop */
+  while (1)
+  {
+
+  }
 
 }
 
@@ -92,17 +99,17 @@ int main(void)
   * @param  thread not used
   * @retval None
   */
-static void LED_Thread1(void const *argument)
+static void LED_Thread1(void *argument)
 {
   uint32_t count = 0;
   (void) argument;
-
+  /* Infinite loop */
   for (;;)
   {
-    count = osKernelSysTick() + 5000;
+    count = osKernelGetTickCount() + 5000;
 
     /* Toggle LED1 every 200 ms for 5 s */
-    while (count > osKernelSysTick())
+    while (count > osKernelGetTickCount())
     {
       BSP_LED_Toggle(LED1);
 
@@ -113,12 +120,12 @@ static void LED_Thread1(void const *argument)
     BSP_LED_Off(LED1);
 
     /* Suspend Thread 1 */
-    osThreadSuspend(NULL);
+    osThreadSuspend(THREAD1Handle);
 
-    count = osKernelSysTick() + 5000;
+    count = osKernelGetTickCount() + 5000;
 
     /* Toggle LED1 every 500 ms for 5 s */
-    while (count > osKernelSysTick())
+    while (count > osKernelGetTickCount())
     {
       BSP_LED_Toggle(LED1);
 
@@ -126,7 +133,7 @@ static void LED_Thread1(void const *argument)
     }
 
     /* Resume Thread 2*/
-    osThreadResume(LEDThread2Handle);
+    osThreadResume(THREAD2Handle);
   }
 }
 
@@ -135,17 +142,17 @@ static void LED_Thread1(void const *argument)
   * @param  argument not used
   * @retval None
   */
-static void LED_Thread2(void const *argument)
+static void LED_Thread2(void *argument)
 {
   uint32_t count;
   (void) argument;
-
+  /* Infinite loop */
   for (;;)
   {
-    count = osKernelSysTick() + 10000;
+    count = osKernelGetTickCount() + 10000;
 
     /* Toggle LED2 every 500 ms for 10 s */
-    while (count > osKernelSysTick())
+    while (count > osKernelGetTickCount())
     {
       BSP_LED_Toggle(LED2);
 
@@ -156,11 +163,27 @@ static void LED_Thread2(void const *argument)
     BSP_LED_Off(LED2);
 
     /* Resume Thread 1 */
-    osThreadResume(LEDThread1Handle);
+    osThreadResume(THREAD1Handle);
 
     /* Suspend Thread 2 */
-    osThreadSuspend(NULL);
+    osThreadSuspend(THREAD2Handle);
   }
+}
+
+/**
+  * @brief  This function is executed in case of error occurrence.
+  * @retval None
+  */
+void Error_Handler(void)
+{
+  /* USER CODE BEGIN Error_Handler_Debug */
+  /* User can add his own implementation to report the HAL error return state */
+  /* Infinite loop */
+  while (1)
+  {
+
+  }
+  /* USER CODE END Error_Handler_Debug */
 }
 
 /**
@@ -240,10 +263,10 @@ static void SystemClock_Config(void)
 }
 
 /**
-* @brief  CPU L1-Cache enable.
-* @param  None
-* @retval None
-*/
+  * @brief  CPU L1-Cache enable.
+  * @param  None
+  * @retval None
+  */
 static void CPU_CACHE_Enable(void)
 {
   /* Enable I-Cache */
@@ -252,7 +275,6 @@ static void CPU_CACHE_Enable(void)
   /* Enable D-Cache */
   SCB_EnableDCache();
 }
-
 
 /**
   * @brief  Configure the MPU attributes
@@ -285,7 +307,7 @@ static void MPU_Config(void)
   HAL_MPU_Enable(MPU_PRIVILEGED_DEFAULT);
 }
 
-#ifdef  USE_FULL_ASSERT
+#ifdef USE_FULL_ASSERT
 
 /**
   * @brief  Reports the name of the source file and the source line number
@@ -304,13 +326,5 @@ void assert_failed(uint8_t *file, uint32_t line)
   {
   }
 }
-#endif
-
-/**
-  * @}
-  */
-
-/**
-  * @}
-  */
+#endif /* USE_FULL_ASSERT */
 

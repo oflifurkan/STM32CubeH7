@@ -20,7 +20,8 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "cmsis_os.h"
+#include "cmsis_os2.h"
+#include "FreeRTOS.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -77,7 +78,7 @@ static void MessageQueueConsumer(void *argument);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-  
+
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -98,7 +99,7 @@ int main(void)
   /* USER CODE BEGIN SysInit */
   /* Initialize LEDs */
   BSP_LED_Init(LED1);
-  BSP_LED_Init(LED3);  
+  BSP_LED_Init(LED3);
 
   /* USER CODE END SysInit */
 
@@ -108,15 +109,15 @@ int main(void)
   /* USER CODE END 2 */
   osKernelInitialize();
   /* USER CODE BEGIN RTOS_MUTEX */
-  
+
   /* USER CODE END RTOS_MUTEX */
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */
-  
+
   /* USER CODE END RTOS_SEMAPHORES */
 
   /* USER CODE BEGIN RTOS_TIMERS */
-  
+
   /* USER CODE END RTOS_TIMERS */
 
   /* Create the thread(s) */
@@ -128,7 +129,7 @@ int main(void)
   MessageQueueConHandle = osThreadNew(MessageQueueConsumer, NULL, (const osThreadAttr_t *)&attr);
 
   /* USER CODE BEGIN RTOS_THREADS */
-  
+
   /* USER CODE END RTOS_THREADS */
 
   /* Create the queue(s) */
@@ -136,7 +137,6 @@ int main(void)
   /* USER CODE BEGIN RTOS_QUEUES */
 
   /* USER CODE END RTOS_QUEUES */
-
 
   /* Start scheduler */
   osKernelStart();
@@ -237,7 +237,7 @@ static void SystemClock_Config(void)
 /* USER CODE BEGIN Header_MessageQueueProducer */
 /**
   * @brief  Function implementing the MessageQueuePro thread.
-  * @param  argument: Not used 
+  * @param  argument: Not used
   * @retval None
   */
 /* USER CODE END Header_MessageQueueProducer */
@@ -251,29 +251,29 @@ static void MessageQueueProducer(void *argument)
     if (osMessageQueuePut(osQueueHandle, &ProducerValue, 100, 0U) != osOK)
     {
       ++ProducerErrors;
-       
-      /* Toggle LED3 to indicate error  */
+
+      /* Toggle LED3 to indicate error */
       BSP_LED_Toggle(LED3);
     }
     else
     {
-      /* Increment the variable we are going to post next time round.  The
+      /* Increment the variable we are going to post next time round. The
       consumer will expect the numbers to follow in numerical order */
       ++ProducerValue;
       if( (ProducerErrors == 0) && (ConsumerErrors == 0) )
       {
-      /* Toggle LED1 to indicate a correct number received  */
+        /* Toggle LED1 to indicate a correct number received */
         BSP_LED_Toggle(LED1);
         osDelay(1000);
       }
     }
   }
-  /* USER CODE END 5 */ 
+  /* USER CODE END 5 */
 }
 
 /* USER CODE BEGIN Header_MessageQueueConsumer */
 /**
-* @brief Function implementing the MessageQueueCon thread.
+  * @brief Function implementing the MessageQueueCon thread.
   * @param  argument: Not used
   * @retval None
   */
@@ -295,8 +295,8 @@ static void MessageQueueConsumer(void *argument)
         /* Catch-up */
         ConsumerValue = osQueueMsg;
         ++ConsumerErrors;
-       
-	    /* Toggle LED3 to indicate error */
+
+        /* Toggle LED3 to indicate error */
         BSP_LED_Toggle(LED3);
       }
       else
@@ -318,10 +318,13 @@ void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
+  /* Infinite loop */
+  while (1)
+  {
 
+  }
   /* USER CODE END Error_Handler_Debug */
 }
-
 
 /**
   * @brief  Configure the MPU attributes
@@ -354,7 +357,7 @@ static void MPU_Config(void)
   HAL_MPU_Enable(MPU_PRIVILEGED_DEFAULT);
 }
 
-#ifdef  USE_FULL_ASSERT
+#ifdef USE_FULL_ASSERT
 
 /**
   * @brief  Reports the name of the source file and the source line number
@@ -371,7 +374,9 @@ void assert_failed(uint8_t *file, uint32_t line)
 
   /* Infinite loop */
   while (1)
-  {}
+  {
+
+  }
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */

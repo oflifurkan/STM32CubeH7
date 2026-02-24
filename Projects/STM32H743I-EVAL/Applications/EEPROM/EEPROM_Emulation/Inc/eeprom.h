@@ -36,6 +36,15 @@
 
 #define PAGE_SIZE               (uint32_t)0x20000  /* Page size = 128KByte */
 
+/* Size of the page header (in bytes)*/
+#define PAGE_HEADER_SIZE      32U
+
+/* Size of one EEPROM element (in bytes).
+ * Each element occupies 64 bytes total:
+ * - First 32 bytes  : data field (stores the uint16_t value; remaining bytes are zeroed)
+ * - Next 32 bytes   : virtual address field (stores the uint16_t virtual address; remaining bytes are zeroed)
+ */
+#define EEPROM_ELEMENT_SIZE   64U
 
 /* Device voltage range supposed to be [2.7V to 3.6V], the operation will 
    be done by word  */

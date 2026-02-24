@@ -403,6 +403,16 @@
               <FilePath>../../../../../../Drivers/BSP/Components/ft5336/ft5336_reg.c</FilePath>
             </File>
             <File>
+              <FileName>gt911.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Drivers/BSP/Components/gt911/gt911.c</FilePath>
+            </File>
+            <File>
+              <FileName>gt911_reg.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Drivers/BSP/Components/gt911/gt911_reg.c</FilePath>
+            </File>
+            <File>
               <FileName>is42s16800j.c</FileName>
               <FileType>1</FileType>
               <FilePath>../../../../../../Drivers/BSP/Components/is42s16800j/is42s16800j.c</FilePath>

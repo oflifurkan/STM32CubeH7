@@ -1,10 +1,10 @@
 /**
   ******************************************************************************
-  * @file    LwIP/LwIP_HTTP_Server_Netconn_RTOS/Src/main.c 
+  * @file    LwIP/LwIP_HTTP_Server_Netconn_RTOS/Src/main.c
   * @author  MCD Application Team
-  * @brief   This sample code implements a http server application based on 
-  *          Netconn API of LwIP stack and FreeRTOS. This application uses 
-  *          STM32H7xx the ETH HAL API to transmit and receive data. 
+  * @brief   This sample code implements a http server application based on
+  *          Netconn API of LwIP stack and FreeRTOS. This application uses
+  *          STM32H7xx the ETH HAL API to transmit and receive data.
   *          The communication is done with a web browser of a remote PC.
   ******************************************************************************
   * @attention
@@ -21,23 +21,46 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "cmsis_os.h"
+#include "cmsis_os2.h"
 #include "ethernetif.h"
 #include "lwip/netif.h"
 #include "lwip/tcpip.h"
 #include "httpserver_netconn.h"
 #include "app_ethernet.h"
-
+#include <string.h>
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
+#define INTERFACE_THREAD_STACK_SIZE ( 1024 )
 struct netif gnetif; /* network interface structure */
+/* Definitions for Start */
+osThreadId_t StartHandle;
+const osThreadAttr_t Start_attributes = {
+  .name = "Start",
+  .stack_size = 256 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
 
+osThreadAttr_t attributes;
+osThreadId_t LinkHandle;
+osThreadId_t DHCPHandle;
+
+const osThreadAttr_t EthLinkThread_attributes = {
+  .name = "EthLink",
+  .stack_size = 256 * 4,
+  .priority = osPriorityNormal
+};
+
+const osThreadAttr_t DHCPThread_attributes = {
+  .name = "DHCP",
+  .stack_size = 256 * 4,
+  .priority = osPriorityBelowNormal
+};
 /* Private function prototypes -----------------------------------------------*/
 static void SystemClock_Config(void);
 static void BSP_Config(void);
-static void StartThread(void const * argument);
+void StartThread(void* argument);
 static void Netif_Config(void);
 static void MPU_Config(void);
 static void CPU_CACHE_Enable(void);
@@ -53,7 +76,7 @@ int main(void)
 {
   /* Configure the MPU attributes as Device memory for ETH DMA descriptors */
   MPU_Config();
-  
+
   /* Enable the CPU Cache */
   CPU_CACHE_Enable();
 
@@ -62,50 +85,52 @@ int main(void)
        - Set NVIC Group Priority to 4
        - Low Level Initialization
      */
-  HAL_Init();  
-  
+  HAL_Init();
+
   /* Configure the system clock to 400 MHz */
-  SystemClock_Config(); 
-  
+  SystemClock_Config();
+
   /* Configure the LCD ...*/
   BSP_Config();
-  
+
   /* Init thread */
-  osThreadDef(Start, StartThread, osPriorityNormal, 0, configMINIMAL_STACK_SIZE * 4);
-  osThreadCreate (osThread(Start), NULL);
-  
+  osKernelInitialize();
+
+  /* Creation of Start thread */
+  StartHandle = osThreadNew(StartThread, NULL, &Start_attributes);
+
   /* Start scheduler */
   osKernelStart();
-  
+
   /* We should never get here as control is now taken by the scheduler */
   for( ;; );
 }
 
 /**
-  * @brief  Start Thread 
+  * @brief  Start Thread
   * @param  argument not used
   * @retval None
   */
-static void StartThread(void const * argument)
-{   
+void StartThread(void* argument)
+{
   /* Create tcp_ip stack thread */
   tcpip_init(NULL, NULL);
-  
+
   /* Initialize the LwIP stack */
   Netif_Config();
 
   /* Initialize webserver demo */
   http_server_netconn_init();
-  
+  /* Infinite loop */
   for( ;; )
   {
-    /* Delete the Init Thread */ 
-    osThreadTerminate(NULL);
+    /* Delete the Init Thread */
+    osThreadTerminate(StartHandle);
   }
 }
 
 /**
-  * @brief  BSP Configuration 
+  * @brief  BSP Configuration
   * @param  None
   * @retval None
   */
@@ -125,7 +150,7 @@ static void Netif_Config(void)
   ip_addr_t ipaddr;
   ip_addr_t netmask;
   ip_addr_t gw;
- 
+
 #if LWIP_DHCP
   ip_addr_set_zero_ip4(&ipaddr);
   ip_addr_set_zero_ip4(&netmask);
@@ -135,32 +160,29 @@ static void Netif_Config(void)
   IP_ADDR4(&netmask,NETMASK_ADDR0,NETMASK_ADDR1,NETMASK_ADDR2,NETMASK_ADDR3);
   IP_ADDR4(&gw,GW_ADDR0,GW_ADDR1,GW_ADDR2,GW_ADDR3);
 #endif /* LWIP_DHCP */
-  
-  /* add the network interface */    
+
+  /* add the network interface */
   netif_add(&gnetif, &ipaddr, &netmask, &gw, NULL, &ethernetif_init, &tcpip_input);
-  
+
   /*  Registers the default network interface. */
   netif_set_default(&gnetif);
-  
-  ethernet_link_status_updated(&gnetif); 
-  
-#if LWIP_NETIF_LINK_CALLBACK 
+
+  ethernet_link_status_updated(&gnetif);
+
+#if LWIP_NETIF_LINK_CALLBACK
   netif_set_link_callback(&gnetif, ethernet_link_status_updated);
-  
-  osThreadDef(EthLink, ethernet_link_thread, osPriorityNormal, 0, configMINIMAL_STACK_SIZE *2);
-  osThreadCreate (osThread(EthLink), &gnetif);
-#endif   
- 
+  LinkHandle = osThreadNew(ethernet_link_thread, &gnetif, &EthLinkThread_attributes);
+#endif
+
 #if LWIP_DHCP
   /* Start DHCPClient */
-  osThreadDef(DHCP, DHCP_Thread, osPriorityBelowNormal, 0, configMINIMAL_STACK_SIZE * 2);
-  osThreadCreate (osThread(DHCP), &gnetif);
-#endif 
+  DHCPHandle = osThreadNew(DHCP_Thread, &gnetif, &DHCPThread_attributes);
+#endif
 }
 
 /**
   * @brief  System Clock Configuration
-  *         The system Clock is configured as follow : 
+  *         The system Clock is configured as follow :
   *            System Clock source            = PLL (HSE BYPASS)
   *            SYSCLK(Hz)                     = 400000000 (CPU Clock)
   *            HCLK(Hz)                       = 200000000 (AXI and AHBs Clock)
@@ -192,10 +214,10 @@ static void SystemClock_Config(void)
   __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
 
   while(!__HAL_PWR_GET_FLAG(PWR_FLAG_VOSRDY)) {}
-  
+
   /* Enable D2 domain SRAM3 Clock (0x30040000 AXI)*/
   __HAL_RCC_D2SRAM3_CLK_ENABLE();
-  
+
   /* Enable HSE Oscillator and activate PLL with HSE as source */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_BYPASS;
@@ -238,17 +260,17 @@ static void SystemClock_Config(void)
 }
 
 /**
-  * @brief  Configure the MPU attributes 
+  * @brief  Configure the MPU attributes
   * @param  None
   * @retval None
   */
 static void MPU_Config(void)
 {
   MPU_Region_InitTypeDef MPU_InitStruct;
-  
+
   /* Disable the MPU */
   HAL_MPU_Disable();
-  
+
   /* Configure the MPU as Strongly ordered for not defined regions */
   MPU_InitStruct.Enable = MPU_REGION_ENABLE;
   MPU_InitStruct.BaseAddress = 0x00;
@@ -263,8 +285,8 @@ static void MPU_Config(void)
   MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_DISABLE;
   
   HAL_MPU_ConfigRegion(&MPU_InitStruct);
-  
-  /* Configure the MPU attributes as Device not cacheable 
+
+  /* Configure the MPU attributes as Device not cacheable
      for ETH DMA descriptors */
   MPU_InitStruct.Enable = MPU_REGION_ENABLE;
   MPU_InitStruct.BaseAddress = 0x30000000;
@@ -279,7 +301,7 @@ static void MPU_Config(void)
   MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_ENABLE;
 
   HAL_MPU_ConfigRegion(&MPU_InitStruct);
-  
+
   /* Configure the MPU attributes as Normal Non Cacheable
      for LwIP RAM heap which contains the Tx buffers */
   MPU_InitStruct.Enable = MPU_REGION_ENABLE;
@@ -314,6 +336,19 @@ static void CPU_CACHE_Enable(void)
   SCB_EnableDCache();
 }
 
+/**
+  * @brief  This function is executed in case of error occurrence.
+  * @param  None
+  * @retval None
+  */
+void Error_Handler(void)
+{
+  /* User may add here some code to deal with this error */
+  while(1)
+  {
+  }
+}
+
 #ifdef  USE_FULL_ASSERT
 
 /**
@@ -324,7 +359,7 @@ static void CPU_CACHE_Enable(void)
   * @retval None
   */
 void assert_failed(uint8_t* file, uint32_t line)
-{ 
+{
   /* User can add his own implementation to report the file name and line number,
      ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
 

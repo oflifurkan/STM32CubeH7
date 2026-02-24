@@ -38,8 +38,8 @@
 
 /** @addtogroup stm32h7xx_system
   * @{
-  */  
-  
+  */
+
 /** @addtogroup STM32H7xx_System_Private_Includes
   * @{
   */
@@ -48,15 +48,15 @@
 #include <math.h>
 
 #if !defined  (HSE_VALUE)
-  #define HSE_VALUE    ((uint32_t)25000000) /*!< Value of the External oscillator in Hz */
+#define HSE_VALUE    ((uint32_t)25000000) /*!< Value of the External oscillator in Hz */
 #endif /* HSE_VALUE */
 
 #if !defined  (CSI_VALUE)
-  #define CSI_VALUE    ((uint32_t)4000000) /*!< Value of the Internal oscillator in Hz*/
+#define CSI_VALUE    ((uint32_t)4000000) /*!< Value of the Internal oscillator in Hz*/
 #endif /* CSI_VALUE */
 
 #if !defined  (HSI_VALUE)
-  #define HSI_VALUE    ((uint32_t)64000000) /*!< Value of the Internal oscillator in Hz*/
+#define HSI_VALUE    ((uint32_t)64000000) /*!< Value of the Internal oscillator in Hz*/
 #endif /* HSI_VALUE */
 
 /**
@@ -132,7 +132,7 @@ void SystemInit (void)
 #if defined (DATA_IN_D2_SRAM)
  __IO uint32_t tmpreg;
 #endif /* DATA_IN_D2_SRAM */
-    
+
   /* FPU settings ------------------------------------------------------------*/
   #if (__FPU_PRESENT == 1) && (__FPU_USED == 1)
     SCB->CPACR |= ((3UL << (10*2))|(3UL << (11*2)));  /* set CP10 and CP11 Full Access */
@@ -140,7 +140,7 @@ void SystemInit (void)
   /* Reset the RCC clock configuration to the default reset state ------------*/
   /* Set HSION bit */
   RCC->CR |= RCC_CR_HSION;
-  
+
   /* Reset CFGR register */
   RCC->CFGR = 0x00000000;
 
@@ -152,7 +152,7 @@ void SystemInit (void)
 
   /* Reset D2CFGR register */
   RCC->D2CFGR = 0x00000000;
-  
+
   /* Reset D3CFGR register */
   RCC->D3CFGR = 0x00000000;
 
@@ -170,14 +170,14 @@ void SystemInit (void)
   RCC->PLL2DIVR = 0x00000000;
 
   /* Reset PLL2FRACR register */
-  
+
   RCC->PLL2FRACR = 0x00000000;
   /* Reset PLL3DIVR register */
   RCC->PLL3DIVR = 0x00000000;
 
   /* Reset PLL3FRACR register */
   RCC->PLL3FRACR = 0x00000000;
-  
+
   /* Reset HSEBYP bit */
   RCC->CR &= 0xFFFBFFFFU;
 
@@ -191,13 +191,21 @@ void SystemInit (void)
   (void) tmpreg;
 #endif /* DATA_IN_D2_SRAM */
 
+  if(READ_BIT(RCC->AHB3ENR, RCC_AHB3ENR_FMCEN) == 0U)
+  {
+    /* Enable the FMC interface clock */
+    SET_BIT(RCC->AHB3ENR, RCC_AHB3ENR_FMCEN);
 
-/*
-   * Disable the FMC bank1 (enabled after reset).
-   * This, prevents CPU speculation access on this bank which blocks the use of FMC during
-   * 24us. During this time the others FMC master (such as LTDC) cannot use it!
-   */
-  FMC_Bank1_R->BTCR[0] = 0x000030D2;
+    /*
+     * Disable the FMC bank1 (enabled after reset).
+     * This, prevents CPU speculation access on this bank which blocks the use of FMC during
+     * 24us. During this time the others FMC master (such as LTDC) cannot use it!
+     */
+    FMC_Bank1_R->BTCR[0] = 0x000030D2;
+
+    /* Disable the FMC interface clock */
+    CLEAR_BIT(RCC->AHB3ENR, RCC_AHB3ENR_FMCEN);
+  }
 
   /* Configure the Vector Table location add offset address ------------------*/
 #ifdef VECT_TAB_SRAM
@@ -205,7 +213,6 @@ void SystemInit (void)
 #else
   SCB->VTOR = FLASH_BANK1_BASE | VECT_TAB_OFFSET;       /* Vector Table Relocation in Internal FLASH */
 #endif  
-
 
 }
 

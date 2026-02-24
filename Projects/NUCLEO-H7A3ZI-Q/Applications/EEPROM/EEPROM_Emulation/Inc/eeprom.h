@@ -35,6 +35,16 @@
 /* Define the size of the sectors to be used */
 #define PAGE_SIZE               (uint32_t)0x2000  /* Page size = 8KByte */
 
+/* Size of the page header (in bytes) */
+#define PAGE_HEADER_SIZE  16
+
+/* Size of one EEPROM element (in bytes).
+ * Each element occupies 32 bytes total:
+ * - First 16 bytes  : data field (stores the uint16_t value; remaining bytes are zeroed)
+ * - Next 16 bytes   : virtual address field (stores the uint16_t virtual address; remaining bytes are zeroed)
+ */
+#define EEPROM_ELEMENT_SIZE 32
+
 /* EEPROM emulation start address in Flash */
 #define EEPROM_START_ADDRESS  ADDR_FLASH_SECTOR_126_BANK2 /* sector6 of bank 2 */
 

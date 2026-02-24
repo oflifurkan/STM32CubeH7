@@ -21,7 +21,7 @@
 #define STM32H7B3I_DISCOVERY_CONF_H
 
 #ifdef __cplusplus
- extern "C" {
+extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/

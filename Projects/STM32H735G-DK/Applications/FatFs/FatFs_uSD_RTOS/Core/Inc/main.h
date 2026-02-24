@@ -32,7 +32,7 @@ extern "C" {
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "stm32h735g_discovery.h"
-#include "cmsis_os.h"
+#include "cmsis_os2.h"
 #include "stm32h735g_discovery_sd.h"
 /* USER CODE END Includes */
 

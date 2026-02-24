@@ -80,7 +80,7 @@ void ethernet_link_status_updated(struct netif *netif)
   * @param  argument: network interface
   * @retval None
   */
-void DHCP_Thread(void const * argument)
+void DHCP_Thread(void* argument)
 {
   struct netif *netif = (struct netif *) argument;
   ip_addr_t ipaddr;
@@ -170,5 +170,3 @@ void DHCP_Thread(void const * argument)
   }
 }
 #endif  /* LWIP_DHCP */
-
-

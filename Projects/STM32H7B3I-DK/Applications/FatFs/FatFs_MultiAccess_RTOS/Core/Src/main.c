@@ -20,7 +20,6 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "cmsis_os.h"
 #include "app_fatfs.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -39,7 +38,7 @@
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
-#define blckqSTACK_SIZE   configMINIMAL_STACK_SIZE
+
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -47,12 +46,12 @@ osThreadId_t StartThreadHandle;
 osThreadId_t ConcurrentThreadHandle;
 static osThreadAttr_t attr = {
                         .priority = osPriorityNormal,
-                        .stack_size = 8 * configMINIMAL_STACK_SIZE,
+                        .stack_size = configMINIMAL_STACK_SIZE * 2,
                       };
-					  
-osMessageQId AppliEvent;
-osMessageQId DiskEvent;	
-uint32_t   DiskQueueMsg = 0;		
+
+osMessageQueueId_t AppliEvent;
+osMessageQueueId_t DiskEvent;
+uint32_t   DiskQueueMsg = 0;
 int32_t ProcessStatus = 0;
 /* USER CODE BEGIN PV */
 __IO uint32_t OsStatus = 0;
@@ -325,16 +324,16 @@ static void ConcurrentThread(void *argument)
     {
       switch(DiskQueueMsg)
       {
-      case DISK_READY_EVENT:	  
-	    FS_File2Operations(); 
+      case DISK_READY_EVENT:
+        FS_File2Operations();
         break;
-        
+
       case DISK_REMOVE_EVENT:
         /* Unlink the USB disk I/O driver */
-        MX_FATFS_DeInit();   
+        MX_FATFS_DeInit();
         Success_Handler();
         break;
-        
+
       default:
         break;
       }

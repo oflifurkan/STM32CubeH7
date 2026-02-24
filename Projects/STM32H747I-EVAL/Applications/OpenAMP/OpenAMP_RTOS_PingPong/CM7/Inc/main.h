@@ -26,11 +26,12 @@
 #include "openamp.h"
 #include "mbox_hsem.h"
 #include "stm32h747i_eval.h"
-#include "cmsis_os.h"
+#include "cmsis_os2.h"
+#include "FreeRTOS.h"
 
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
-#define appliSTACK_SIZE configMINIMAL_STACK_SIZE *2
+#define appliSTACK_SIZE configMINIMAL_STACK_SIZE *4
 /* Exported functions ------------------------------------------------------- */
 void Error_Handler(void);
 

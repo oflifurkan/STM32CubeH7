@@ -21,7 +21,7 @@
 #define STM32H7XX_NUCLEO_CONF_H
 
 #ifdef __cplusplus
- extern "C" {
+extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
@@ -62,18 +62,18 @@
 /**
   * @}
   */
-  
+
 /**
   * @}
   */
-  
+
 /**
   * @}
   */
-   
+
 #ifdef __cplusplus
 }
 #endif
-  
+
 #endif /* STM32H7XX_NUCLEO_CONF_H */
 

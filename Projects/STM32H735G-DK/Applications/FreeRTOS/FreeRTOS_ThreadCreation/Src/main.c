@@ -20,7 +20,8 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "cmsis_os.h"
+#include "cmsis_os2.h"
+#include "FreeRTOS.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -73,7 +74,7 @@ static void LED_Thread2(void *argument);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-  
+
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -99,7 +100,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   /* USER CODE BEGIN 2 */
- 
+
   /* USER CODE END 2 */
   osKernelInitialize();
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -109,11 +110,11 @@ int main(void)
   /* USER CODE BEGIN RTOS_SEMAPHORES */
 
   /* USER CODE END RTOS_SEMAPHORES */
-  
+
   /* USER CODE BEGIN RTOS_TIMERS */
 
   /* USER CODE END RTOS_TIMERS */
-  
+
   /* Create the thread(s) */
   /* definition and creation of THREAD1 */
   attr.name = "THREAD1";
@@ -128,7 +129,6 @@ int main(void)
   /* USER CODE BEGIN RTOS_QUEUES */
 
   /* USER CODE END RTOS_QUEUES */
-  
 
   /* Start scheduler */
   osKernelStart();
@@ -230,7 +230,7 @@ static void SystemClock_Config(void)
 /* USER CODE BEGIN Header_LED_Thread1 */
 /**
   * @brief  Function implementing the THREAD1 thread.
-  * @param  argument: Not used 
+  * @param  argument: Not used
   * @retval None
   */
 /* USER CODE END Header_LED_Thread1 */
@@ -272,15 +272,15 @@ static void LED_Thread1(void *argument)
     /* Resume Thread 2*/
     OsStatus = osThreadResume(THREAD2Handle);
   }
-  /* USER CODE END 5 */ 
+  /* USER CODE END 5 */
 }
 
 /* USER CODE BEGIN Header_LED_Thread2 */
 /**
-* @brief Function implementing the THREAD2 thread.
-* @param argument: Not used
-* @retval None
-*/
+  * @brief Function implementing the THREAD2 thread.
+  * @param argument: Not used
+  * @retval None
+  */
 /* USER CODE END Header_LED_Thread2 */
 static void LED_Thread2(void *argument)
 {
@@ -320,10 +320,13 @@ void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
+  /* Infinite loop */
+  while (1)
+  {
 
+  }
   /* USER CODE END Error_Handler_Debug */
 }
-
 
 /**
   * @brief  Configure the MPU attributes
@@ -373,7 +376,9 @@ void assert_failed(uint8_t* file, uint32_t line)
 
   /* Infinite loop */
   while (1)
-  {}
+  {
+
+  }
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */

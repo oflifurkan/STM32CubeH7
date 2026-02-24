@@ -290,6 +290,7 @@
 
 #if !defined(ff_malloc) || !defined(ff_free)
 #include "cmsis_os.h"
+#include "FreeRTOS.h"
 #endif
 
 /* define the ff_malloc and ff_free as pvPortMalloc and vPortFree from cmsis_os */

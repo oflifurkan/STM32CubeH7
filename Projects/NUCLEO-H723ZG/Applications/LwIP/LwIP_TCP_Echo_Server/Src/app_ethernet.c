@@ -2,7 +2,7 @@
   ******************************************************************************
   * @file    LwIP/LwIP_TCP_Echo_Server/Src/app_ethernet.c
   * @author  MCD Application Team
-  * @brief   Ethernet specefic module
+  * @brief   Ethernet specific module
   ******************************************************************************
   * @attention
   *
@@ -119,7 +119,7 @@ void DHCP_Process(struct netif *netif)
       if (dhcp_supplied_address(netif))
       {
         DHCP_state = DHCP_ADDRESS_ASSIGNED;
-        
+
         BSP_LED_On(LED2);
         BSP_LED_Off(LED3);
 
@@ -174,5 +174,3 @@ void DHCP_Periodic_Handle(struct netif *netif)
   }
 }
 #endif
-
-

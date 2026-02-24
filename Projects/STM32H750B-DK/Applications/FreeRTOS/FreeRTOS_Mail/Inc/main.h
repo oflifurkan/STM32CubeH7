@@ -22,7 +22,7 @@
 #define __MAIN_H
 
 #ifdef __cplusplus
- extern "C" {
+extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
@@ -30,16 +30,13 @@
 #include "stm32h750b_discovery.h"
 #include "stm32h750b_discovery_sdram.h"
 /* Exported types ------------------------------------------------------------*/
-/* Exported constants --------------------------------------------------------*/ 
+/* Exported constants --------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/
 /* Exported functions ------------------------------------------------------- */
-
 
 #ifdef __cplusplus
 }
 #endif
 
 #endif /* __MAIN_H */
-
-
 

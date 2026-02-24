@@ -15,11 +15,11 @@
   *
   ******************************************************************************
   */
-
+#include "FreeRTOS.h"
 #include <string.h>
 #include <stdio.h>
 #include "main.h"
-#include "cmsis_os.h"
+#include "cmsis_os2.h"
 
 /* FreeRTOS buffer for static allocation */
 
@@ -31,7 +31,7 @@ static void SystemClock_Config(void);
 static void RNG_Init(void);
 static void MPU_Config(void);
 static void CPU_CACHE_Enable(void);
-static void MainThread(void const * argument);
+static void MainThread(void * argument);
 
 RNG_HandleTypeDef RngHandle;
 
@@ -47,6 +47,22 @@ UART_HandleTypeDef UartHandle;
 #endif /* __GNUC__ */
 
 #endif
+
+/* Main thread */
+osThreadId_t MainThreadHandle = NULL;
+static const osThreadAttr_t StartThreadAttr = {
+ .name = "Start",
+ .priority = osPriorityHigh,
+ .stack_size = configMINIMAL_STACK_SIZE * 8
+};
+
+/* Client thread */
+osThreadId_t ClientThreadHandle = NULL;
+static const osThreadAttr_t ClientThreadAttr = {
+  .name = "Client",
+  .priority = osPriorityNormal,
+  .stack_size = configMINIMAL_STACK_SIZE * 25
+};
 
 int main()
 {
@@ -107,9 +123,10 @@ int main()
   }
 
 #endif
-   /* Init thread */
-  osThreadDef(Start, MainThread, osPriorityHigh, 0, configMINIMAL_STACK_SIZE * 2);
-  osThreadCreate (osThread(Start), NULL);
+
+  osKernelInitialize();
+
+  MainThreadHandle = osThreadNew(MainThread, NULL, &StartThreadAttr);
 
   /* Start scheduler */
   osKernelStart();
@@ -125,7 +142,7 @@ int main()
   * @param  argument not used
   * @retval None
   */
-static void MainThread(void const * argument)
+static void MainThread(void * argument)
 {
   UNUSED(argument);
 #ifdef USE_LCD
@@ -135,13 +152,12 @@ static void MainThread(void const * argument)
 #endif
 
   /* Start SSL Client task : Connect to SSL server and provide the SSL handshake protocol */
-  osThreadDef(Client, SSL_Client, osPriorityNormal, 0, configMINIMAL_STACK_SIZE * 15);
-  osThreadCreate (osThread(Client), NULL);
+  ClientThreadHandle = osThreadNew(SSL_Client, NULL, &ClientThreadAttr);
 
   for( ;; )
   {
     /* Delete the start Thread */
-    osThreadTerminate(NULL);
+    osThreadTerminate(MainThreadHandle);
   }
 }
 /**

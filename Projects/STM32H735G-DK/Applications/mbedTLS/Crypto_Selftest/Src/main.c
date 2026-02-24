@@ -18,6 +18,7 @@
   ******************************************************************************
   */
 
+#include "FreeRTOS.h"
 #include <string.h>
 #include <stdio.h>
 #include "main.h"
@@ -35,7 +36,7 @@ static void SystemClock_Config(void);
 static void MPU_Config(void);
 static void RNG_Init(void);
 static void CPU_CACHE_Enable(void);
-static void MainThread(void const * argument);
+static void MainThread(void * argument);
 
 RNG_HandleTypeDef RngHandle;
 
@@ -51,6 +52,22 @@ UART_HandleTypeDef UartHandle;
 #endif /* __GNUC__ */
 
 #endif /* USE_LCD */
+
+/* Main thread */
+osThreadId_t MainThreadHandle = NULL;
+static const osThreadAttr_t StartThreadAttr = {
+ .name = "Start",
+ .priority = osPriorityHigh,
+ .stack_size = configMINIMAL_STACK_SIZE * 8
+};
+
+/* Crypto thread */
+osThreadId_t CryptoThreadHandle = NULL;
+static const osThreadAttr_t CryptoThreadAttr = {
+  .name = "Crypto",
+  .priority = osPriorityNormal,
+  .stack_size = configMINIMAL_STACK_SIZE * 48
+};
 
 int main()
 {
@@ -96,9 +113,9 @@ int main()
   }
 #endif /* USE_LCD */
 
-   /* Init thread */
-  osThreadDef(Start, MainThread, osPriorityHigh, 0, configMINIMAL_STACK_SIZE * 2);
-  osThreadCreate (osThread(Start), NULL);
+  osKernelInitialize();
+  /* Init thread */
+  MainThreadHandle = osThreadNew(MainThread, NULL, &StartThreadAttr);
 
   /* Start scheduler */
   osKernelStart();
@@ -112,7 +129,7 @@ int main()
   * @param  argument not used
   * @retval None
   */
-static void MainThread(void const * argument)
+static void MainThread(void * argument)
 {
   UNUSED(argument);
 
@@ -125,13 +142,12 @@ static void MainThread(void const * argument)
   /* Start crypto task.                                  */
   /* Execute cryptographic algorithms (selftest program) */
   /* as defined in mbedtls_config.h                       */
-  osThreadDef(Crypto, mbedTLS_Selftest, osPriorityNormal, 0, configMINIMAL_STACK_SIZE * 40);
-  osThreadCreate (osThread(Crypto), NULL);
+  CryptoThreadHandle = osThreadNew(mbedTLS_Selftest, NULL, &CryptoThreadAttr);
 
   for( ;; )
   {
     /* Delete the start Thread */
-    osThreadTerminate(NULL);
+    osThreadTerminate(MainThreadHandle);
   }
 }
 

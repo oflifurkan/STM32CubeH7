@@ -18,7 +18,13 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "cmsis_os.h"
+#include "cmsis_os2.h"
+#include "FreeRTOS.h"
+
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */
+
+/* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 typedef struct 
@@ -29,32 +35,51 @@ typedef struct
 } Amail_TypeDef;
 
 /* Private define ------------------------------------------------------------*/
-#define blckqSTACK_SIZE   configMINIMAL_STACK_SIZE
+#define blckqSTACK_SIZE  configMINIMAL_STACK_SIZE
 #define MAIL_SIZE        (uint32_t) 1
 
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-osMailQId mailId;
+osMessageQueueId_t mailId;
 
-uint32_t ProducerValue1 = 0, ProducerValue2 = 0;
+osThreadAttr_t consumer_attr = {
+    .name = "QCons",
+    .priority = osPriorityBelowNormal,
+    .stack_size = blckqSTACK_SIZE
+    };
+
+    osThreadAttr_t producer_attr = {
+        .name = "QProd",
+        .priority = osPriorityBelowNormal,
+        .stack_size = blckqSTACK_SIZE
+    };
+
+uint32_t ProducerValue1 = 0,ProducerValue2 = 0;
 uint8_t ProducerValue3 = 0;
-uint32_t ConsumerValue1 = 0, ConsumerValue2 = 0;
+uint32_t ConsumerValue1 = 0,ConsumerValue2 = 0;
 uint8_t ConsumerValue3 = 0;
 
 /* Private function prototypes -----------------------------------------------*/
 
 /* Thread function that creates a mail and posts it on a mail queue. */
-static void MailQueueProducer (const void *argument);
+static void MailQueueProducer (void *argument);
 
 /* Thread function that receives mail , remove it  from a mail queue and checks that
 it is the expected mail. */
-static void MailQueueConsumer (const void *argument);
+static void MailQueueConsumer(void *argument);
 
 static void SystemClock_Config(void);
 static void Error_Handler(void);
 static void CPU_CACHE_Enable(void);
-
 /* Private functions ---------------------------------------------------------*/
+/* USER CODE BEGIN PFP */
+
+/* USER CODE END PFP */
+
+/* Private user code ---------------------------------------------------------*/
+/* USER CODE BEGIN 0 */
+
+/* USER CODE END 0 */
 
 /**
   * @brief  Main program
@@ -63,46 +88,90 @@ static void CPU_CACHE_Enable(void);
   */
 int main(void)
 {
+  /* USER CODE BEGIN 1 */
+
+  /* USER CODE END 1 */
+
+  /* MCU Configuration--------------------------------------------------------*/
 
   /* Enable the CPU Cache */
   CPU_CACHE_Enable();
 
   /* STM32H7xx HAL library initialization:
-       - Systick timer is configured by default as source of time base, but user 
-         can eventually implement his proper time base source (a general purpose 
-         timer for example or other time source), keeping in mind that Time base 
-         duration should be kept 1ms since PPP_TIMEOUT_VALUEs are defined and 
+       - Systick timer is configured by default as source of time base, but user
+         can eventually implement his proper time base source (a general purpose
+         timer for example or other time source), keeping in mind that Time base
+         duration should be kept 1ms since PPP_TIMEOUT_VALUEs are defined and
          handled in milliseconds basis.
        - Set NVIC Group Priority to 4
        - Low Level Initialization
      */
-  HAL_Init();  
-  
+  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+  HAL_Init();
+
+  /* USER CODE BEGIN Init */
+
+  /* USER CODE END Init */
+
   /* Configure the system clock to 400 Mhz */
   SystemClock_Config();
-  
+
   /* Initialize LED_RED LED_GREEN */
   BSP_LED_Init(LED_RED);
   BSP_LED_Init(LED_GREEN);
+  /* USER CODE END SysInit */
+  /* Initialize all configured peripherals */
+  /* USER CODE BEGIN 2 */
+
+  /* USER CODE END 2 */
+  osKernelInitialize();
+  /* USER CODE BEGIN RTOS_MUTEX */
+  /* USER CODE END RTOS_MUTEX */
+
+  /* USER CODE BEGIN RTOS_SEMAPHORES */
+
+  /* USER CODE END RTOS_SEMAPHORES */
   
+  /* USER CODE BEGIN RTOS_TIMERS */
+
+  /* USER CODE END RTOS_TIMERS */
+
   /* Create the mail queue used by the two tasks to pass the struct Amail_TypeDef */
-  osMailQDef(mail, MAIL_SIZE, Amail_TypeDef); /* Define mail queue */
-  
-  mailId = osMailCreate(osMailQ(mail), NULL); /* create mail queue */
-  
+  mailId = osMessageQueueNew(MAIL_SIZE, sizeof(Amail_TypeDef), NULL);
+
+  if (mailId == NULL)
+  {
+     Error_Handler();
+  }
+
+  /* Create the thread(s) */
   /* Note the producer has a lower priority than the consumer when the tasks are
      spawned. */
-  osThreadDef(QCons, MailQueueConsumer, osPriorityBelowNormal, 0, blckqSTACK_SIZE);
-  osThreadCreate(osThread(QCons), NULL);
-  
-  osThreadDef(QProd, MailQueueProducer, osPriorityBelowNormal, 0, blckqSTACK_SIZE);
-  osThreadCreate(osThread(QProd), NULL);
+  osThreadNew(MailQueueConsumer, NULL, &consumer_attr);
+
+  osThreadNew(MailQueueProducer, NULL, &producer_attr);
+  /* USER CODE BEGIN RTOS_THREADS */
+  /* USER CODE END RTOS_THREADS */
+
+  /* USER CODE BEGIN RTOS_QUEUES */
+
+  /* USER CODE END RTOS_QUEUES */
   
   /* Start scheduler */
-  osKernelStart ();
+  osKernelStart();
 
   /* We should never get here as control is now taken by the scheduler */
-  for(;;);
+
+  /* Infinite loop */
+  /* USER CODE BEGIN WHILE */
+  while (1)
+  {
+    /* USER CODE END WHILE */
+
+    /* USER CODE BEGIN 3 */
+  }
+  /* USER CODE END 3 */
+
 }
 
 /**
@@ -110,32 +179,31 @@ int main(void)
   * @param  argument: Not used
   * @retval None
   */
-static void MailQueueProducer(const void *argument)
+static void MailQueueProducer(void *argument)
 {
-  Amail_TypeDef *pTMail;
-  
-  for(;;)
-  {	
+  Amail_TypeDef mail;
 
-    pTMail = osMailAlloc(mailId, osWaitForever); /* Allocate memory */
-    pTMail->var1 = ProducerValue1; /* Set the mail content */
-    pTMail->var2 = ProducerValue2;
-    pTMail->var3 = ProducerValue3;
-    
-    if(osMailPut(mailId, pTMail) != osOK) /* Send Mail */  
+  for(;;)
+  {
+
+    mail.var1 = ProducerValue1; /* Set the mail content */
+    mail.var2 = ProducerValue2;
+    mail.var3 = ProducerValue3;
+
+    if(osMessageQueuePut(mailId, &mail, 0, 0) != osOK) /* Send Mail */
     {
       /* LED1 is turned On to indicate error */
       BSP_LED_On(LED_GREEN);
     }
     else
     {
-      /* Increment the variables we are going to post next time round.  The
+      /* Increment the variables we are going to post next time round. The
       consumer will expect the numbers to follow in numerical order. */
       ++ProducerValue1;
       ProducerValue2 += 2;
       ProducerValue3 += 3;
-      
-      /* Toggle LED_GREEN to indicate a correct number sent  */
+
+      /* Toggle LED_GREEN to indicate a correct number sent */
       BSP_LED_Toggle(LED_GREEN);
 
       osDelay(250);
@@ -148,45 +216,41 @@ static void MailQueueProducer(const void *argument)
   * @param  argument: Not used
   * @retval None
   */
-static void MailQueueConsumer (const void *argument)
+static void MailQueueConsumer (void *argument)
 {
-  osEvent event;
-  Amail_TypeDef *pRMail;
-  
+
+  Amail_TypeDef mail;
+  uint8_t msg_prio;
+
   for(;;)
   {
-    /* Get the message from the queue */
-    event = osMailGet(mailId, osWaitForever); /* wait for mail */
-    
-    if(event.status == osEventMail)
+
+    if(osMessageQueueGet(mailId, &mail, &msg_prio, osWaitForever) == osOK)
     {
-      pRMail = event.value.p;
-      
-      if((pRMail->var1 != ConsumerValue1) || (pRMail->var2 != ConsumerValue2) || (pRMail->var3 != ConsumerValue3))
+
+      if((mail.var1 != ConsumerValue1) || (mail.var2 != ConsumerValue2) || (mail.var3 != ConsumerValue3))
       {
         /* Catch-up. */
-        ConsumerValue1 = pRMail->var1;
-        ConsumerValue2 = pRMail->var2;
-        ConsumerValue3 = pRMail->var3;
-        
+        ConsumerValue1 = mail.var1;
+        ConsumerValue2 = mail.var2;
+        ConsumerValue3 = mail.var3;
+
         /* LED1 is turned On to indicate error */
         BSP_LED_On(LED_RED);
       }
       else
-      {  
+      {
         /* Calculate values we expect to remove from the mail queue next time
         round. */
         ++ConsumerValue1;
         ConsumerValue2 += 2;
-        ConsumerValue3 += 3;  
-        
-        /* Toggle LED_RED to indicate a correct number received  */
+        ConsumerValue3 += 3;
+
+        /* Toggle LED_RED to indicate a correct number received */
         BSP_LED_Toggle(LED_RED);
         osDelay(250);
       }
-
-      osMailFree(mailId, pRMail); /* free memory allocated for mail */       
-    }		
+    }
   }
 }
 
@@ -220,7 +284,7 @@ static void SystemClock_Config(void)
 
   /* The voltage scaling allows optimizing the power consumption when the device is
      clocked below the maximum system frequency, to update the voltage scaling value
-     regarding system frequency refer to product datasheet.  */
+     regarding system frequency refer to product datasheet. */
   __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
 
   while(!__HAL_PWR_GET_FLAG(PWR_FLAG_VOSRDY)) {}
@@ -293,8 +357,7 @@ static void CPU_CACHE_Enable(void)
   SCB_EnableDCache();
 }
 
-
-#ifdef  USE_FULL_ASSERT
+#ifdef USE_FULL_ASSERT
 
 /**
   * @brief  Reports the name of the source file and the source line number
@@ -304,7 +367,8 @@ static void CPU_CACHE_Enable(void)
   * @retval None
   */
 void assert_failed(uint8_t* file, uint32_t line)
-{ 
+{
+  /* USER CODE BEGIN 6 */
   /* User can add his own implementation to report the file name and line number,
      ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
 
@@ -312,15 +376,7 @@ void assert_failed(uint8_t* file, uint32_t line)
   while (1)
   {
   }
+  /* USER CODE END 6 */
 }
 #endif
-
-/**
-  * @}
-  */
-
-/**
-  * @}
-  */
-
 

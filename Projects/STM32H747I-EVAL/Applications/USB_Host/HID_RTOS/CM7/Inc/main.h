@@ -30,7 +30,8 @@
 #include "lcd_trace.h"
 #include "utilities_conf.h"
 #include "stm32_lcd.h"
-
+#include "cmsis_os2.h"
+#include "FreeRTOS.h"
 
 
 /* Exported types ------------------------------------------------------------*/

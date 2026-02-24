@@ -1,6 +1,6 @@
 /**
   ******************************************************************************
-  * @file    USB_Host/HID_RTOS/Inc/main.h 
+  * @file    USB_Host/HID_RTOS/Inc/main.h
   * @author  MCD Application Team
   * @brief   Header for main.c module
   ******************************************************************************
@@ -15,7 +15,7 @@
   *
   ******************************************************************************
   */
-  
+
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef __MAIN_H
 #define __MAIN_H
@@ -31,41 +31,43 @@
 #include "lcd_trace.h"
 #include "utilities_conf.h"
 
+#include "cmsis_os2.h"
+#include "FreeRTOS.h"
 /* Exported types ------------------------------------------------------------*/
 typedef enum {
   HID_DEMO_IDLE = 0,
-  HID_DEMO_WAIT,  
+  HID_DEMO_WAIT,
   HID_DEMO_START,
-  HID_DEMO_MOUSE,  
+  HID_DEMO_MOUSE,
   HID_DEMO_KEYBOARD,
   HID_DEMO_REENUMERATE,
 }HID_Demo_State;
 
 typedef enum {
   HID_MOUSE_IDLE = 0,
-  HID_MOUSE_WAIT, 
+  HID_MOUSE_WAIT,
   HID_MOUSE_START,
 }HID_mouse_State;
 
 typedef enum {
   HID_KEYBOARD_IDLE = 0,
-  HID_KEYBOARD_WAIT,  
-  HID_KEYBOARD_START,    
+  HID_KEYBOARD_WAIT,
+  HID_KEYBOARD_START,
 }HID_keyboard_State;
 
 typedef struct _DemoStateMachine {
   __IO HID_Demo_State     state;
   __IO HID_mouse_State    mouse_state;
-  __IO HID_keyboard_State keyboard_state;   
+  __IO HID_keyboard_State keyboard_state;
   __IO uint8_t            select;
   __IO uint8_t            lock;
 }HID_DEMO_StateMachine;
 
 typedef enum {
   APPLICATION_IDLE = 0,
-  APPLICATION_DISCONNECT,  
+  APPLICATION_DISCONNECT,
   APPLICATION_START,
-  APPLICATION_READY,    
+  APPLICATION_READY,
   APPLICATION_RUNNING,
 }HID_ApplicationTypeDef;
 

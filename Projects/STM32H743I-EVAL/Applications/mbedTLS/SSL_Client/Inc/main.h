@@ -103,7 +103,7 @@
 #define USARTx_RX_AF                     GPIO_AF4_USART1
 #endif
 
-void SSL_Client(void const *argument);
+void SSL_Client(void *argument);
 void Error_Handler(void);
 void Success_Handler(void);
 

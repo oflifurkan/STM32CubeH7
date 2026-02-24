@@ -44,7 +44,6 @@ static void BSP_Config(void);
 static void Netif_Config(void);
 static void MPU_Config(void);
 static void CPU_CACHE_Enable(void);
-
 /* Private functions ---------------------------------------------------------*/
 
 /**
@@ -204,7 +203,7 @@ static void SystemClock_Config(void)
   ret = HAL_RCC_OscConfig(&RCC_OscInitStruct);
   if(ret != HAL_OK)
   {
-    while(1);
+    Error_Handler();
   }
 
 /* Select PLL as system clock source and configure  bus clocks dividers */
@@ -221,7 +220,7 @@ static void SystemClock_Config(void)
   ret = HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_3);
   if(ret != HAL_OK)
   {
-    while(1);
+    Error_Handler();
   }
 
 /*
@@ -252,7 +251,7 @@ static void MPU_Config(void)
 
   /* Disable the MPU */
   HAL_MPU_Disable();
-  
+
   /* Configure the MPU as Strongly ordered for not defined regions */
   MPU_InitStruct.Enable = MPU_REGION_ENABLE;
   MPU_InitStruct.BaseAddress = 0x00;
@@ -316,6 +315,19 @@ static void CPU_CACHE_Enable(void)
 
   /* Enable D-Cache */
   SCB_EnableDCache();
+}
+
+/**
+  * @brief  This function is executed in case of error occurrence.
+  * @param  None
+  * @retval None
+  */
+void Error_Handler(void)
+{
+  /* User may add here some code to deal with this error */
+  while(1)
+  {
+  }
 }
 
 #ifdef  USE_FULL_ASSERT

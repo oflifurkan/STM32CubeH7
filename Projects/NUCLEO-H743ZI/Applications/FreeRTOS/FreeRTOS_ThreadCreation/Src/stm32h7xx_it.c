@@ -19,7 +19,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "stm32h7xx_it.h"
-#include "cmsis_os.h"
+#include "cmsis_os2.h"
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
@@ -98,16 +98,6 @@ void UsageFault_Handler(void)
   */
 void DebugMon_Handler(void)
 {
-}
-
-/**
-  * @brief  This function handles SysTick Handler.
-  * @param  None
-  * @retval None
-  */
-void SysTick_Handler(void)
-{
-  osSystickHandler();
 }
 
 /******************************************************************************/

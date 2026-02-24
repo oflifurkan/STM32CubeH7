@@ -341,9 +341,9 @@
 			<locationURI>PARENT-6-PROJECT_LOC/Drivers/BSP/STM32H743I-EVAL/stm32h743i_eval_sdram.c</locationURI>
 		</link>
 		<link>
-			<name>Middlewares/FreeRTOS/CMSIS_RTOS/cmsis_os.c</name>
+			<name>Middlewares/FreeRTOS/CMSIS_RTOS/cmsis_os2.c</name>
 			<type>1</type>
-			<locationURI>PARENT-6-PROJECT_LOC/Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/cmsis_os.c</locationURI>
+			<locationURI>PARENT-6-PROJECT_LOC/Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.c</locationURI>
 		</link>
 		<link>
 			<name>Middlewares/FreeRTOS/portable/heap_4.c</name>
@@ -353,7 +353,12 @@
 		<link>
 			<name>Middlewares/FreeRTOS/portable/port.c</name>
 			<type>1</type>
-			<locationURI>PARENT-6-PROJECT_LOC/Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM7/r0p1/port.c</locationURI>
+			<locationURI>PARENT-6-PROJECT_LOC/Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F/port.c</locationURI>
+		</link>
+		<link>
+			<name>Middlewares/FreeRTOS/portable/portmacro.h</name>
+			<type>1</type>
+			<locationURI>PARENT-6-PROJECT_LOC/Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F/portmacro.h</locationURI>
 		</link>
 		<link>
 			<name>Middlewares/STM32_USBH_Library/Core/usbh_core.c</name>

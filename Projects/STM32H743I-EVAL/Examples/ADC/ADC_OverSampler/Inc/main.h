@@ -46,7 +46,7 @@
 #define SAMPLINGTIME                    ADC_SAMPLETIME_8CYCLES_5
 
 /* Definition for ADCx's Oversampling parameters */
-#define OVERSAMPLING_RATIO              1023                               /* 1024-oversampling */                                      
+#define OVERSAMPLING_RATIO              1024                               /* 1024-oversampling */                                      
 #define RIGHTBITSHIFT                   ADC_RIGHTBITSHIFT_6                /* 6-bit right shift of the oversampled summation */          
 #define TRIGGEREDMODE                   ADC_TRIGGEREDMODE_SINGLE_TRIGGER   /* A single trigger for all channel oversampled conversions */
 #define OVERSAMPLINGSTOPRESET           ADC_REGOVERSAMPLING_CONTINUED_MODE /* Oversampling buffer maintained during injection sequence */

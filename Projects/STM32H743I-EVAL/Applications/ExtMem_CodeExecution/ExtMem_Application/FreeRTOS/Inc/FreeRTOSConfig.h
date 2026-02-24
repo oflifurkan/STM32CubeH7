@@ -1,5 +1,5 @@
 /*
- * FreeRTOS Kernel V10.0.1
+ * FreeRTOS Kernel V10.6.2
  * Copyright (C) 2017 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
@@ -47,12 +47,19 @@
  extern uint32_t SystemCoreClock;
 #endif
 
+/*-------------------- specific defines -------------------*/
+#ifdef USE_CMSIS_V2
+#ifndef CMSIS_device_header
+#define CMSIS_device_header "stm32h7xx.h"
+#endif /* CMSIS_device_header */
+#endif /* USE_CMSIS_V2 */
+
 #define configUSE_PREEMPTION                    1
 #define configUSE_IDLE_HOOK                     0
 #define configUSE_TICK_HOOK                     0
 #define configCPU_CLOCK_HZ                      ( SystemCoreClock )
 #define configTICK_RATE_HZ                      ( ( TickType_t ) 1000 )
-#define configMAX_PRIORITIES                    ( 7 )
+
 #define configMINIMAL_STACK_SIZE                ( ( uint16_t ) 128 )
 #define configTOTAL_HEAP_SIZE                   ( ( size_t ) ( 2 * 1024 ) )
 #define configMAX_TASK_NAME_LEN                 ( 16 )
@@ -68,12 +75,26 @@
 #define configUSE_COUNTING_SEMAPHORES           1
 #define configGENERATE_RUN_TIME_STATS           0
 
+#ifdef USE_CMSIS_V2
+/*
+ * CMSISRTOS-v2 requires:
+ * - FreeRTOS static allocation features (configSUPPORT_STATIC_ALLOCATION == 1)
+ * - Max proiorities set to 56           (configMAX_PRIORITIES == 56)
+ * - disable the optimized task selection(configUSE_PORT_OPTIMISED_TASK_SELECTION == 0)
+ */
+#define configSUPPORT_STATIC_ALLOCATION         1
+#define configMAX_PRIORITIES                    56
+#define configUSE_PORT_OPTIMISED_TASK_SELECTION 0
+#else
+#define configMAX_PRIORITIES                    7
+#endif
+
 /* Co-routine definitions. */
 #define configUSE_CO_ROUTINES                   0
 #define configMAX_CO_ROUTINE_PRIORITIES         ( 2 )
 
 /* Software timer definitions. */
-#define configUSE_TIMERS                        0
+#define configUSE_TIMERS                        1
 #define configTIMER_TASK_PRIORITY               ( 2 )
 #define configTIMER_QUEUE_LENGTH                10
 #define configTIMER_TASK_STACK_DEPTH            ( configMINIMAL_STACK_SIZE * 2 )
@@ -90,6 +111,12 @@ to exclude the API function. */
 #define INCLUDE_xQueueGetMutexHolder            1
 #define INCLUDE_xTaskGetSchedulerState          1
 #define INCLUDE_eTaskGetState                   1
+
+#ifdef USE_CMSIS_V2
+#define INCLUDE_xTimerPendFunctionCall          1
+#define INCLUDE_uxTaskGetStackHighWaterMark     1
+#define INCLUDE_xTaskGetCurrentTaskHandle       1
+#endif /* USE_CMSIS_V2 */
 
 /* Cortex-M specific definitions. */
 #ifdef __NVIC_PRIO_BITS
@@ -125,9 +152,10 @@ header file. */
 #define vPortSVCHandler    SVC_Handler
 #define xPortPendSVHandler PendSV_Handler
 
-/* IMPORTANT: This define MUST be commented when used with STM32Cube firmware,
-              to prevent overwriting SysTick_Handler defined within STM32Cube HAL */
-/* #define xPortSysTickHandler SysTick_Handler */
+#ifndef USE_CMSIS_V2
+#define xPortSysTickHandler SysTick_Handler
+#endif /* USE_CMSIS_V2 */
+
 
 #endif /* FREERTOS_CONFIG_H */
 

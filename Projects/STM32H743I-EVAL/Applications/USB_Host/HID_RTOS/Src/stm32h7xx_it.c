@@ -1,9 +1,9 @@
 /**
   ******************************************************************************
-  * @file    USB_Host/HID_RTOS/Src/stm32h7xx_it.c 
+  * @file    USB_Host/HID_RTOS/Src/stm32h7xx_it.c
   * @author  MCD Application Team
   * @brief   Main Interrupt Service Routines.
-  *          This file provides template for all exceptions handler and 
+  *          This file provides template for all exceptions handler and
   *          peripherals interrupt service routine.
   ******************************************************************************
   * @attention
@@ -105,15 +105,6 @@ void DebugMon_Handler(void)
 }
 
 
-/**
-  * @brief  This function handles SysTick Handler.
-  * @param  None
-  * @retval None
-  */
-void SysTick_Handler(void)
-{
-  osSystickHandler();
-}
 
 /******************************************************************************/
 /* stm32h7xx Peripherals Interrupt Handlers */

@@ -20,8 +20,8 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "cmsis_os.h"
-
+#include "cmsis_os2.h"
+#include "FreeRTOS.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -60,7 +60,7 @@ static osThreadAttr_t lowattr = {
                         .priority = osPriorityIdle,
                         .stack_size = configMINIMAL_STACK_SIZE,
                       };
-osMutexId_t osMutexHandle;					 
+osMutexId_t osMutexHandle;
 /* USER CODE BEGIN PV */
 
 /* Variables used to detect and latch errors */
@@ -90,10 +90,10 @@ int main(void)
 {
   /* USER CODE BEGIN 1 */
   /* STM32H7xx HAL library initialization:
-       - Systick timer is configured by default as source of time base, but user 
-         can eventually implement his proper time base source (a general purpose 
-         timer for example or other time source), keeping in mind that Time base 
-         duration should be kept 1ms since PPP_TIMEOUT_VALUEs are defined and 
+       - Systick timer is configured by default as source of time base, but user
+         can eventually implement his proper time base source (a general purpose
+         timer for example or other time source), keeping in mind that Time base
+         duration should be kept 1ms since PPP_TIMEOUT_VALUEs are defined and
          handled in milliseconds basis.
        - Set NVIC Group Priority to 4
        - Low Level Initialization
@@ -130,15 +130,15 @@ int main(void)
   /* Create the mutex(es) */
   osMutexHandle = osMutexNew(NULL);
   /* USER CODE BEGIN RTOS_MUTEX */
-  
+
   /* USER CODE END RTOS_MUTEX */
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */
-  
+
   /* USER CODE END RTOS_SEMAPHORES */
 
   /* USER CODE BEGIN RTOS_TIMERS */
-  
+
   /* USER CODE END RTOS_TIMERS */
 
   /* Create the thread(s) */
@@ -152,16 +152,13 @@ int main(void)
   lowattr.name = "MutLow";
   MutLowHandle = osThreadNew(MutexLowPriorityThread, NULL, (const osThreadAttr_t *)&lowattr);
 
-  
-
   /* USER CODE BEGIN RTOS_THREADS */
-  
+
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_QUEUES */
-  
+
   /* USER CODE END RTOS_QUEUES */
- 
 
   /* Start scheduler */
   osKernelStart();
@@ -317,10 +314,10 @@ static void MutexHighPriorityThread(void *argument)
 
 /* USER CODE BEGIN Header_MutexMediumPriorityThread */
 /**
-* @brief Function implementing the MutMedium thread.
-* @param argument: Not used
-* @retval None
-*/
+  * @brief Function implementing the MutMedium thread.
+  * @param argument: Not used
+  * @retval None
+  */
 /* USER CODE END Header_MutexMediumPriorityThread */
 static void MutexMediumPriorityThread(void *argument)
 {
@@ -382,10 +379,10 @@ static void MutexMediumPriorityThread(void *argument)
 
 /* USER CODE BEGIN Header_MutexLowPriorityThread */
 /**
-* @brief Function implementing the MutLow thread.
-* @param argument: Not used
-* @retval None
-*/
+  * @brief Function implementing the MutLow thread.
+  * @param argument: Not used
+  * @retval None
+  */
 /* USER CODE END Header_MutexLowPriorityThread */
 static void MutexLowPriorityThread(void *argument)
 {
@@ -451,10 +448,13 @@ void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
- 
+  /* Infinite loop */
+  while (1)
+  {
+
+  }
   /* USER CODE END Error_Handler_Debug */
 }
-
 
 /**
   * @brief  Configure the MPU attributes
@@ -504,7 +504,9 @@ void assert_failed(uint8_t *file, uint32_t line)
 
   /* Infinite loop */
   while (1)
-  {}
+  {
+
+  }
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */

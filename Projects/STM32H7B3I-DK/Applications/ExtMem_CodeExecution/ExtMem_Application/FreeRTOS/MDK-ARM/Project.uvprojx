@@ -10,14 +10,14 @@
       <TargetName>BootROM_ExternalSDRAM_InternalSRAM</TargetName>
       <ToolsetNumber>0x4</ToolsetNumber>
       <ToolsetName>ARM-ADS</ToolsetName>
-      <pCCUsed>5060750::V5.06 update 6 (build 750)::ARMCC</pCCUsed>
+      <pCCUsed>5060960::V5.06 update 7 (build 960)::.\ARMCC</pCCUsed>
       <uAC6>0</uAC6>
       <TargetOption>
         <TargetCommonOption>
           <Device>STM32H7B0ABIxQ</Device>
           <Vendor>STMicroelectronics</Vendor>
-          <PackID>Keil.STM32H7A-B3_DFP.2.1.7</PackID>
-          <PackURL>http://www.keil.com/pack</PackURL>
+          <PackID>Keil.STM32H7xx_DFP.4.1.0</PackID>
+          <PackURL>https://www.keil.com/pack/</PackURL>
           <Cpu>IRAM(0x20000000,0x20000) IROM(0x08000000,0x20000) CPUTYPE("Cortex-M7") FPU3(DFPU) CLOCK(12000000) ELITTLE</Cpu>
           <FlashUtilSpec></FlashUtilSpec>
           <StartupFile></StartupFile>
@@ -185,6 +185,8 @@
             <uocXRam>0</uocXRam>
             <RvdsVP>3</RvdsVP>
             <RvdsMve>0</RvdsMve>
+            <RvdsCdeCp>0</RvdsCdeCp>
+            <nBranchProt>0</nBranchProt>
             <hadIRAM2>0</hadIRAM2>
             <hadIROM2>0</hadIROM2>
             <StupSel>8</StupSel>
@@ -338,7 +340,7 @@
               <MiscControls></MiscControls>
               <Define>APPLICATION_ADDRESS=0xD0000000U,USE_HAL_DRIVER,USE_PWR_DIRECT_SMPS_SUPPLY,STM32H7B0xxQ</Define>
               <Undefine></Undefine>
-              <IncludePath>../Inc;../../../../../../../Drivers/CMSIS/Include;../../../../../../../Drivers/CMSIS/Device/ST/STM32H7xx/Include;../../../../../../../Drivers/STM32H7xx_HAL_Driver/Inc;../../../../../../../Drivers/BSP/STM32H7B3I-DK;../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS;../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/include;../../../../../../../Drivers/BSP/Components/Common;../../../../../../../Utilities/Fonts;../../../../../../../Utilities/CPU</IncludePath>
+              <IncludePath>../Inc;../../../../../../../Drivers/CMSIS/Include;../../../../../../../Drivers/CMSIS/RTOS2/Include;../../../../../../../Drivers/CMSIS/Device/ST/STM32H7xx/Include;../../../../../../../Drivers/STM32H7xx_HAL_Driver/Inc;../../../../../../../Drivers/BSP/STM32H7B3I-DK;../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2;../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/include;../../../../../../../Drivers/BSP/Components/Common;../../../../../../../Utilities/Fonts;../../../../../../../Utilities/CPU</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -351,7 +353,7 @@
             <NoWarn>0</NoWarn>
             <uSurpInc>0</uSurpInc>
             <useXO>0</useXO>
-            <uClangAs>0</uClangAs>
+            <ClangAsOpt>4</ClangAsOpt>
             <VariousControls>
               <MiscControls></MiscControls>
               <Define></Define>
@@ -483,9 +485,24 @@
           <GroupName>Middlewares/FreeRTOS</GroupName>
           <Files>
             <File>
+              <FileName>croutine.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/croutine.c</FilePath>
+            </File>
+            <File>
+              <FileName>event_groups.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/event_groups.c</FilePath>
+            </File>
+            <File>
               <FileName>list.c</FileName>
               <FileType>1</FileType>
               <FilePath>../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/list.c</FilePath>
+            </File>
+            <File>
+              <FileName>queue.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/queue.c</FilePath>
             </File>
             <File>
               <FileName>tasks.c</FileName>
@@ -493,19 +510,19 @@
               <FilePath>../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/tasks.c</FilePath>
             </File>
             <File>
-              <FileName>queue.c</FileName>
+              <FileName>timers.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\..\..\..\..\Middlewares\Third_Party\FreeRTOS\Source\queue.c</FilePath>
+              <FilePath>../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/timers.c</FilePath>
             </File>
           </Files>
         </Group>
         <Group>
-          <GroupName>Middlewares/FreeRTOS/CMSIS_RTOS</GroupName>
+          <GroupName>Middlewares/FreeRTOS/CMSIS_RTOS_V2</GroupName>
           <Files>
             <File>
-              <FileName>cmsis_os.c</FileName>
+              <FileName>cmsis_os2.c</FileName>
               <FileType>1</FileType>
-              <FilePath>../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/cmsis_os.c</FilePath>
+              <FilePath>../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -513,9 +530,9 @@
           <GroupName>Middlewares/FreeRTOS/portable</GroupName>
           <Files>
             <File>
-              <FileName>heap_1.c</FileName>
+              <FileName>heap_4.c</FileName>
               <FileType>1</FileType>
-              <FilePath>../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/portable/MemMang/heap_1.c</FilePath>
+              <FilePath>../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/portable/MemMang/heap_4.c</FilePath>
             </File>
             <File>
               <FileName>port.c</FileName>
@@ -569,8 +586,8 @@
         <TargetCommonOption>
           <Device>STM32H7B0ABIxQ</Device>
           <Vendor>STMicroelectronics</Vendor>
-          <PackID>Keil.STM32H7A-B3_DFP.2.1.7</PackID>
-          <PackURL>http://www.keil.com/pack</PackURL>
+          <PackID>Keil.STM32H7xx_DFP.4.1.0</PackID>
+          <PackURL>https://www.keil.com/pack/</PackURL>
           <Cpu>IRAM(0x20000000,0x20000) IROM(0x08000000,0x20000) CPUTYPE("Cortex-M7") FPU3(DFPU) CLOCK(12000000) ELITTLE</Cpu>
           <FlashUtilSpec></FlashUtilSpec>
           <StartupFile></StartupFile>
@@ -738,6 +755,8 @@
             <uocXRam>0</uocXRam>
             <RvdsVP>3</RvdsVP>
             <RvdsMve>0</RvdsMve>
+            <RvdsCdeCp>0</RvdsCdeCp>
+            <nBranchProt>0</nBranchProt>
             <hadIRAM2>0</hadIRAM2>
             <hadIROM2>0</hadIROM2>
             <StupSel>8</StupSel>
@@ -891,7 +910,7 @@
               <MiscControls></MiscControls>
               <Define>APPLICATION_ADDRESS=0x90000000U,USE_HAL_DRIVER,USE_PWR_DIRECT_SMPS_SUPPLY,STM32H7B0xxQ</Define>
               <Undefine></Undefine>
-              <IncludePath>../Inc;../../../../../../../Drivers/CMSIS/Include;../../../../../../../Drivers/CMSIS/Device/ST/STM32H7xx/Include;../../../../../../../Drivers/CMSIS/Device/ST/STM32H7xx/Include;../../../../../../../Drivers/STM32H7xx_HAL_Driver/Inc;../../../../../../../Drivers/BSP/STM32H7B3I-DK;../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM7/r0p1;../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS;../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/include;../../../../../../../Drivers/BSP/Components/Common;../../../../../../../Utilities/Fonts;../../../../../../../Utilities/CPU</IncludePath>
+              <IncludePath>../Inc;../../../../../../../Drivers/CMSIS/Include;../../../../../../../Drivers/CMSIS/RTOS2/Include;../../../../../../../Drivers/CMSIS/Device/ST/STM32H7xx/Include;../../../../../../../Drivers/CMSIS/Device/ST/STM32H7xx/Include;../../../../../../../Drivers/STM32H7xx_HAL_Driver/Inc;../../../../../../../Drivers/BSP/STM32H7B3I-DK;../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM7/r0p1;../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2;../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/include;../../../../../../../Drivers/BSP/Components/Common;../../../../../../../Utilities/Fonts;../../../../../../../Utilities/CPU</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -904,7 +923,7 @@
             <NoWarn>0</NoWarn>
             <uSurpInc>0</uSurpInc>
             <useXO>0</useXO>
-            <uClangAs>0</uClangAs>
+            <ClangAsOpt>4</ClangAsOpt>
             <VariousControls>
               <MiscControls></MiscControls>
               <Define></Define>
@@ -1036,9 +1055,24 @@
           <GroupName>Middlewares/FreeRTOS</GroupName>
           <Files>
             <File>
+              <FileName>croutine.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/croutine.c</FilePath>
+            </File>
+            <File>
+              <FileName>event_groups.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/event_groups.c</FilePath>
+            </File>
+            <File>
               <FileName>list.c</FileName>
               <FileType>1</FileType>
               <FilePath>../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/list.c</FilePath>
+            </File>
+            <File>
+              <FileName>queue.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/queue.c</FilePath>
             </File>
             <File>
               <FileName>tasks.c</FileName>
@@ -1046,19 +1080,19 @@
               <FilePath>../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/tasks.c</FilePath>
             </File>
             <File>
-              <FileName>queue.c</FileName>
+              <FileName>timers.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\..\..\..\..\Middlewares\Third_Party\FreeRTOS\Source\queue.c</FilePath>
+              <FilePath>../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/timers.c</FilePath>
             </File>
           </Files>
         </Group>
         <Group>
-          <GroupName>Middlewares/FreeRTOS/CMSIS_RTOS</GroupName>
+          <GroupName>Middlewares/FreeRTOS/CMSIS_RTOS_V2</GroupName>
           <Files>
             <File>
-              <FileName>cmsis_os.c</FileName>
+              <FileName>cmsis_os2.c</FileName>
               <FileType>1</FileType>
-              <FilePath>../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/cmsis_os.c</FilePath>
+              <FilePath>../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -1066,9 +1100,9 @@
           <GroupName>Middlewares/FreeRTOS/portable</GroupName>
           <Files>
             <File>
-              <FileName>heap_1.c</FileName>
+              <FileName>heap_4.c</FileName>
               <FileType>1</FileType>
-              <FilePath>../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/portable/MemMang/heap_1.c</FilePath>
+              <FilePath>../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/portable/MemMang/heap_4.c</FilePath>
             </File>
             <File>
               <FileName>port.c</FileName>
@@ -1122,8 +1156,8 @@
         <TargetCommonOption>
           <Device>STM32H7B0ABIxQ</Device>
           <Vendor>STMicroelectronics</Vendor>
-          <PackID>Keil.STM32H7A-B3_DFP.2.1.7</PackID>
-          <PackURL>http://www.keil.com/pack</PackURL>
+          <PackID>Keil.STM32H7xx_DFP.4.1.0</PackID>
+          <PackURL>https://www.keil.com/pack/</PackURL>
           <Cpu>IRAM(0x20000000,0x20000) IROM(0x08000000,0x20000) CPUTYPE("Cortex-M7") FPU3(DFPU) CLOCK(12000000) ELITTLE</Cpu>
           <FlashUtilSpec></FlashUtilSpec>
           <StartupFile></StartupFile>
@@ -1291,6 +1325,8 @@
             <uocXRam>0</uocXRam>
             <RvdsVP>3</RvdsVP>
             <RvdsMve>0</RvdsMve>
+            <RvdsCdeCp>0</RvdsCdeCp>
+            <nBranchProt>0</nBranchProt>
             <hadIRAM2>0</hadIRAM2>
             <hadIROM2>0</hadIROM2>
             <StupSel>8</StupSel>
@@ -1444,7 +1480,7 @@
               <MiscControls></MiscControls>
               <Define>APPLICATION_ADDRESS=0x90000000U,USE_HAL_DRIVER,USE_PWR_DIRECT_SMPS_SUPPLY,STM32H7B0xxQ</Define>
               <Undefine></Undefine>
-              <IncludePath>../Inc;../../../../../../../Drivers/CMSIS/Include;../../../../../../../Drivers/CMSIS/Device/ST/STM32H7xx/Include;../../../../../../../Drivers/CMSIS/Device/ST/STM32H7xx/Include;../../../../../../../Drivers/STM32H7xx_HAL_Driver/Inc;../../../../../../../Drivers/BSP/STM32H7B3I-DK;../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM7/r0p1;../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS;../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/include;../../../../../../../Drivers/BSP/Components/Common;../../../../../../../Utilities/Fonts;../../../../../../../Utilities/CPU</IncludePath>
+              <IncludePath>../Inc;../../../../../../../Drivers/CMSIS/Include;../../../../../../../Drivers/CMSIS/RTOS2/Include;../../../../../../../Drivers/CMSIS/Device/ST/STM32H7xx/Include;../../../../../../../Drivers/CMSIS/Device/ST/STM32H7xx/Include;../../../../../../../Drivers/STM32H7xx_HAL_Driver/Inc;../../../../../../../Drivers/BSP/STM32H7B3I-DK;../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM7/r0p1;../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2;../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/include;../../../../../../../Drivers/BSP/Components/Common;../../../../../../../Utilities/Fonts;../../../../../../../Utilities/CPU</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -1457,7 +1493,7 @@
             <NoWarn>0</NoWarn>
             <uSurpInc>0</uSurpInc>
             <useXO>0</useXO>
-            <uClangAs>0</uClangAs>
+            <ClangAsOpt>4</ClangAsOpt>
             <VariousControls>
               <MiscControls></MiscControls>
               <Define></Define>
@@ -1589,9 +1625,24 @@
           <GroupName>Middlewares/FreeRTOS</GroupName>
           <Files>
             <File>
+              <FileName>croutine.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/croutine.c</FilePath>
+            </File>
+            <File>
+              <FileName>event_groups.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/event_groups.c</FilePath>
+            </File>
+            <File>
               <FileName>list.c</FileName>
               <FileType>1</FileType>
               <FilePath>../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/list.c</FilePath>
+            </File>
+            <File>
+              <FileName>queue.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/queue.c</FilePath>
             </File>
             <File>
               <FileName>tasks.c</FileName>
@@ -1599,19 +1650,19 @@
               <FilePath>../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/tasks.c</FilePath>
             </File>
             <File>
-              <FileName>queue.c</FileName>
+              <FileName>timers.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\..\..\..\..\Middlewares\Third_Party\FreeRTOS\Source\queue.c</FilePath>
+              <FilePath>../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/timers.c</FilePath>
             </File>
           </Files>
         </Group>
         <Group>
-          <GroupName>Middlewares/FreeRTOS/CMSIS_RTOS</GroupName>
+          <GroupName>Middlewares/FreeRTOS/CMSIS_RTOS_V2</GroupName>
           <Files>
             <File>
-              <FileName>cmsis_os.c</FileName>
+              <FileName>cmsis_os2.c</FileName>
               <FileType>1</FileType>
-              <FilePath>../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/cmsis_os.c</FilePath>
+              <FilePath>../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -1619,9 +1670,9 @@
           <GroupName>Middlewares/FreeRTOS/portable</GroupName>
           <Files>
             <File>
-              <FileName>heap_1.c</FileName>
+              <FileName>heap_4.c</FileName>
               <FileType>1</FileType>
-              <FilePath>../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/portable/MemMang/heap_1.c</FilePath>
+              <FilePath>../../../../../../../Middlewares/Third_Party/FreeRTOS/Source/portable/MemMang/heap_4.c</FilePath>
             </File>
             <File>
               <FileName>port.c</FileName>

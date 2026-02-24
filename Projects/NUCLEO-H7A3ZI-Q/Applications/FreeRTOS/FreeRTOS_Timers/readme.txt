@@ -1,6 +1,6 @@
 /**
   @page FreeRTOS_Timers FreeRTOS Timers application
- 
+
   @verbatim
   ******************************************************************************
   * @file    FreeRTOS/FreeRTOS_Timers/readme.txt
@@ -23,8 +23,8 @@
 
 How to use timers of CMSIS RTOS API.
 
-This application creates a thread that toggle LED2 every 400 ms, and a periodic 
-timer that calls a callback function every 200 ms to toggle the LED1.  
+This application creates a thread that toggle LED2 every 400 ms, and a periodic
+timer that calls a callback function every 200 ms to toggle the LED1.
 
 @note Care must be taken when using HAL_Delay(), this function provides accurate
       delay (in milliseconds) based on variable incremented in HAL time base ISR.
@@ -33,7 +33,7 @@ timer that calls a callback function every 200 ms to toggle the LED1.
       the peripheral interrupt. Otherwise the caller ISR process will be blocked.
       To change the HAL time base interrupt priority you have to use HAL_NVIC_SetPriority()
       function.
- 
+
 @note The application needs to ensure that the HAL time base is always set to 1 millisecond
       to have correct HAL operation.
 
@@ -50,10 +50,10 @@ timer that calls a callback function every 200 ms to toggle the LED1.
       Please refer to the AN4838 “Managing memory protection unit (MPU) in STM32 MCUs”
       Please refer to the AN4839 “Level 1 cache on STM32F7 Series and STM32H7 Series"
 
-@note The FreeRTOS heap size configTOTAL_HEAP_SIZE defined in FreeRTOSConfig.h is set accordingly to the 
+@note The FreeRTOS heap size configTOTAL_HEAP_SIZE defined in FreeRTOSConfig.h is set accordingly to the
       OS resources memory requirements of the application with +10% margin and rounded to the upper Kbyte boundary.
 
-For more details about FreeRTOS implementation on STM32Cube, please refer to UM1722 "Developing Applications 
+For more details about FreeRTOS implementation on STM32Cube, please refer to UM1722 "Developing Applications
 on STM32Cube with RTOS".
 
 @par Keywords
@@ -64,28 +64,26 @@ RTOS, FreeRTOS, Threading, Timer
     - FreeRTOS/FreeRTOS_Timers/Src/main.c                       Main program
     - FreeRTOS/FreeRTOS_Timers/Src/stm32h7xx_hal_timebase_tim.c HAL timebase file
     - FreeRTOS/FreeRTOS_Timers/Src/stm32h7xx_it.c               Interrupt handlers
-	- FreeRTOS/FreeRTOS_Timers/Src/stm32h7xx_hal_msp.c          MSP Initialization file
+    - FreeRTOS/FreeRTOS_Timers/Src/stm32h7xx_hal_msp.c          MSP Initialization file
     - FreeRTOS/FreeRTOS_Timers/Src/system_stm32h7xx.c           STM32H7xx system clock configuration file
     - FreeRTOS/FreeRTOS_Timers/Inc/main.h                       Main program header file
     - FreeRTOS/FreeRTOS_Timers/Inc/stm32h7xx_hal_conf.h         HAL Library Configuration file
     - FreeRTOS/FreeRTOS_Timers/Inc/stm32h7xx_it.h               Interrupt handlers header file
     - FreeRTOS/FreeRTOS_Timers/Inc/FreeRTOSConfig.h             FreeRTOS Configuration file
-	- FreeRTOS/FreeRTOS_Timers/Inc/stm32h7xx_nucleo_conf.h    BSP configuration file
+    - FreeRTOS/FreeRTOS_Timers/Inc/stm32h7xx_nucleo_conf.h      BSP configuration file
 
 @par Hardware and Software environment
 
   - This application runs on STM32H7A3xxQ devices.
-    
+
   - This application has been tested with Nucleo-H7A3ZI-Q board and can be
     easily tailored to any other supported device and development board.
-    
 
 @par How to use it ?
 
 In order to make the program work, you must do the following:
- - Open your preferred toolchain 
+ - Open your preferred toolchain
  - Rebuild all files and load your image into target memory
  - Run the example
-  
 
- */
+*/

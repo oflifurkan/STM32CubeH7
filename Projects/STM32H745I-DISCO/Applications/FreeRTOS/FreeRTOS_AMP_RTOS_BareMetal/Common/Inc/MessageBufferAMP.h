@@ -1,5 +1,5 @@
 /*
- * FreeRTOS Kernel V10.0.0
+ * FreeRTOS Kernel V10.6.2
  * Copyright (C) 2017 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
@@ -47,17 +47,17 @@ StaticStreamBuffer_t xStreamBufferStruct;
 /* Defines the memory that will actually hold the streams within the stream buffer.*/
 #pragma location = 0x38000040
 static uint8_t ucStorageBuffer[ mbaTASK_MESSAGE_BUFFER_SIZE ];
-#elif defined ( __CC_ARM )
-MessageBufferHandle_t xCoreMessageBuffer __attribute__((at(0x38000000)));
+#elif defined ( __CC_ARM ) || defined ( __ARMCC_VERSION )
+MessageBufferHandle_t xCoreMessageBuffer __attribute__((section(".RAM_D3_Z1"), used));
 /* The variable used to hold the stream buffer structure.*/
-StaticStreamBuffer_t xStreamBufferStruct __attribute__((at(0x38000004)));
+StaticStreamBuffer_t xStreamBufferStruct __attribute__((section(".RAM_D3_Z2"), used));
 /* Used to dimension the array used to hold the streams. */
 /* Defines the memory that will actually hold the streams within the stream buffer.*/
-static uint8_t ucStorageBuffer[ mbaTASK_MESSAGE_BUFFER_SIZE ]__attribute__((at(0x38000040)));
+static uint8_t ucStorageBuffer[ mbaTASK_MESSAGE_BUFFER_SIZE ]__attribute__((section(".RAM_D3_Z3"), used));
 #elif defined ( __GNUC__ )
-MessageBufferHandle_t xCoreMessageBuffer __attribute__((section(".xCoreMessageBuffer_section")));;
+MessageBufferHandle_t xCoreMessageBuffer __attribute__((section(".xCoreMessageBuffer_section")));
 /* The variable used to hold the stream buffer structure.*/
-StaticStreamBuffer_t xStreamBufferStruct __attribute__((section(".xStreamBufferStruct_section")));;
+StaticStreamBuffer_t xStreamBufferStruct __attribute__((section(".xStreamBufferStruct_section")));
 /* Used to dimension the array used to hold the streams. */
 /* Defines the memory that will actually hold the streams within the stream buffer.*/
 static uint8_t ucStorageBuffer[ mbaTASK_MESSAGE_BUFFER_SIZE ]__attribute__((section(".ucStorageBuffer_section")));

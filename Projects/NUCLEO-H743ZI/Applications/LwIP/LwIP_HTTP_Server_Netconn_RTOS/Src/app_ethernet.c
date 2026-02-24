@@ -1,8 +1,8 @@
 /**
   ******************************************************************************
-  * @file    LwIP/LwIP_HTTP_Server_Netconn_RTOS/Src/app_ethernet.c 
+  * @file    LwIP/LwIP_HTTP_Server_Netconn_RTOS/Src/app_ethernet.c
   * @author  MCD Application Team
-  * @brief   Ethernet specefic module
+  * @brief   Ethernet specific module
   ******************************************************************************
   * @attention
   *
@@ -60,7 +60,7 @@ void ethernet_link_status_updated(struct netif *netif)
     DHCP_state = DHCP_LINK_DOWN;
 #else
     BSP_LED_Off(LED2);
-    BSP_LED_On(LED3); 
+    BSP_LED_On(LED3);
 #endif /* LWIP_DHCP */
   }
 }
@@ -71,7 +71,7 @@ void ethernet_link_status_updated(struct netif *netif)
   * @param  argument: network interface
   * @retval None
   */
-void DHCP_Thread(void const * argument)
+void DHCP_Thread(void* argument)
 {
   struct netif *netif = (struct netif *) argument;
   ip_addr_t ipaddr;
@@ -142,5 +142,3 @@ void DHCP_Thread(void const * argument)
   }
 }
 #endif  /* LWIP_DHCP */
-
-

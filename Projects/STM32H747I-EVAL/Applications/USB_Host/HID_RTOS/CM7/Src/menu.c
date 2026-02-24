@@ -28,7 +28,12 @@ uint32_t JoyState = JOY_NONE;
 __IO uint32_t Joy_State;
 uint8_t prev_select = 0;
 uint8_t joy_select = 0;
-osSemaphoreId MenuEvent;
+osSemaphoreId_t MenuEvent;
+const osThreadAttr_t menuThreadAttr = {
+  .name = "Menu_Thread",
+  .stack_size = 8 * configMINIMAL_STACK_SIZE,
+  .priority = osPriorityHigh
+};
 
 uint8_t *DEMO_KEYBOARD_menu[] = {
   (uint8_t *)
@@ -54,7 +59,7 @@ uint8_t *DEMO_HID_menu[] = {
 /* Private function prototypes ----------------------------------------------- */
 static void USBH_MouseDemo(USBH_HandleTypeDef * phost);
 static void USBH_KeybdDemo(USBH_HandleTypeDef * phost);
-static void HID_MenuThread(void const *argument);
+static void HID_MenuThread(void *argument);
 static void HID_DEMO_ProbeKey(uint32_t state);
 /* Private functions --------------------------------------------------------- */
 
@@ -66,18 +71,13 @@ static void HID_DEMO_ProbeKey(uint32_t state);
 void HID_MenuInit(void)
 {
   /* Create Menu Semaphore */
-  osSemaphoreDef(osSem);
-
-  MenuEvent = osSemaphoreCreate(osSemaphore(osSem), 1);
+  MenuEvent = osSemaphoreNew(1, 1, NULL);
 
   /* Force menu to show Item 0 by default */
   osSemaphoreRelease(MenuEvent);
 
   /* Menu task */
-  osThreadDef(Menu_Thread, HID_MenuThread, osPriorityHigh, 0,
-              8 * configMINIMAL_STACK_SIZE);
-
-  osThreadCreate(osThread(Menu_Thread), NULL);
+  osThreadNew(HID_MenuThread, NULL, &menuThreadAttr);
 
   UTIL_LCD_SetTextColor(UTIL_LCD_COLOR_GREEN);
   UTIL_LCD_DisplayStringAtLine(18,
@@ -87,6 +87,7 @@ void HID_MenuInit(void)
                               (uint8_t *)
                               "Use [Joystick Up/Down] to scroll HID menu");
 }
+
 /**
   * @brief  Updates the Menu.
   * @param  None
@@ -98,16 +99,17 @@ void HID_UpdateMenu(void)
   hid_demo.state = HID_DEMO_IDLE;
   osSemaphoreRelease(MenuEvent);
 }
+
 /**
   * @brief  User task
   * @param  pvParameters not used
   * @retval None
   */
-void HID_MenuThread(void const *argument)
+void HID_MenuThread(void *argument)
 {
   for (;;)
   {
-    if (osSemaphoreWait(MenuEvent, osWaitForever) == osOK)
+    if (osSemaphoreAcquire(MenuEvent, osWaitForever) == osOK)
     {
       switch (hid_demo.state)
       {

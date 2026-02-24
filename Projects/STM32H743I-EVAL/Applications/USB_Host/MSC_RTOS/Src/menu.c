@@ -18,6 +18,8 @@
 
 /* Includes ------------------------------------------------------------------ */
 #include "main.h"
+#include "FreeRTOS.h"
+#include "cmsis_os2.h"
 
 /* Private typedef ----------------------------------------------------------- */
 /* Private define ------------------------------------------------------------ */
@@ -26,7 +28,7 @@
 /* Private macro ------------------------------------------------------------- */
 /* Private variables --------------------------------------------------------- */
 MSC_DEMO_StateMachine msc_demo;
-osSemaphoreId MenuEvent;
+osSemaphoreId_t MenuEvent;
 
 uint8_t *MSC_main_menu[] = {
   (uint8_t *)
@@ -40,7 +42,7 @@ uint8_t *MSC_main_menu[] = {
 /* Private function prototypes ----------------------------------------------- */
 static void MSC_SelectItem(uint8_t ** menu, uint8_t item);
 static void MSC_DEMO_ProbeKey(uint32_t state);
-static void MSC_MenuThread(void const *argument);
+static void MSC_MenuThread(void *argument);
 
 /* Private functions --------------------------------------------------------- */
 
@@ -52,22 +54,23 @@ static void MSC_MenuThread(void const *argument);
 void Menu_Init(void)
 {
   /* Create Menu Semaphore */
-  osSemaphoreDef(osSem);
-
-  MenuEvent = osSemaphoreCreate(osSemaphore(osSem), 1);
+  MenuEvent = osSemaphoreNew(1, 1, NULL);
 
   /* Force menu to show Item 0 by default */
   osSemaphoreRelease(MenuEvent);
 
   /* Menu task */
+  const osThreadAttr_t menuThreadAttr = {
+    .name = "Menu_Thread",
 #if defined(__GNUC__)
-  osThreadDef(Menu_Thread, MSC_MenuThread, osPriorityHigh, 0,
-              8 * configMINIMAL_STACK_SIZE);
+    .stack_size = 12 * configMINIMAL_STACK_SIZE,
+    .priority = osPriorityHigh
 #else
-  osThreadDef(Menu_Thread, MSC_MenuThread, osPriorityHigh, 0,
-              4 * configMINIMAL_STACK_SIZE);
+    .stack_size = 8 * configMINIMAL_STACK_SIZE,
+    .priority = osPriorityHigh
 #endif
-  osThreadCreate(osThread(Menu_Thread), NULL);
+  };
+  osThreadNew(MSC_MenuThread, NULL, &menuThreadAttr);
 
   UTIL_LCD_SetTextColor(UTIL_LCD_COLOR_GREEN);
   UTIL_LCD_DisplayStringAtLine(15,
@@ -83,11 +86,11 @@ void Menu_Init(void)
   * @param  pvParameters not used
   * @retval None
   */
-static void MSC_MenuThread(void const *argument)
+static void MSC_MenuThread(void *argument)
 {
   for (;;)
   {
-    if (osSemaphoreWait(MenuEvent, osWaitForever) == osOK)
+    if (osSemaphoreAcquire(MenuEvent, osWaitForever) == osOK)
     {
       switch (msc_demo.state)
       {

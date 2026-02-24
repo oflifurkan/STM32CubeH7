@@ -466,6 +466,11 @@
 			<locationURI>PARENT-6-PROJECT_LOC/Middlewares/Third_Party/LwIP/src/netif/ethernet.c</locationURI>
 		</link>
 		<link>
+			<name>Middlewares/LwIP/Core/IPv4/acd.c</name>
+			<type>1</type>
+			<locationURI>PARENT-6-PROJECT_LOC/Middlewares/Third_Party/LwIP/src/core/ipv4/acd.c</locationURI>
+		</link>
+		<link>
 			<name>Middlewares/LwIP/Core/IPv4/autoip.c</name>
 			<type>1</type>
 			<locationURI>PARENT-6-PROJECT_LOC/Middlewares/Third_Party/LwIP/src/core/ipv4/autoip.c</locationURI>

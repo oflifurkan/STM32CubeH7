@@ -1085,6 +1085,12 @@
           <name>$PROJ_DIR$\..\..\..\..\..\..\Drivers\BSP\Components\ft5336\ft5336_reg.c</name>
         </file>
         <file>
+          <name>$PROJ_DIR$\..\..\..\..\..\..\Drivers\BSP\Components\gt911\gt911.c</name>
+        </file>
+        <file>
+          <name>$PROJ_DIR$\..\..\..\..\..\..\Drivers\BSP\Components\gt911\gt911_reg.c</name>
+        </file>
+        <file>
           <name>$PROJ_DIR$\..\..\..\..\..\..\Drivers\BSP\Components\is42s16800j\is42s16800j.c</name>
         </file>
       </group>

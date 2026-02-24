@@ -18,19 +18,37 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "cmsis_os.h"
+#include "cmsis_os2.h"
+#include "FreeRTOS.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-osThreadId LEDThread1Handle, LEDThread2Handle;
+osThreadId_t LEDThread1Handle, LEDThread2Handle;
 
 /* Private function prototypes -----------------------------------------------*/
-static void LED_Thread1(void const *argument);
-static void LED_Thread2(void const *argument);
+static void LED_Thread1(void *argument);
+static void LED_Thread2(void *argument);
 static void SystemClock_Config(void);
 static void CPU_CACHE_Enable(void);
+
+/* Thread IDs */
+osThreadId_t LEDThread1Handle;
+osThreadId_t LEDThread2Handle;
+
+/* Thread attributes */
+const osThreadAttr_t LED_RED_attributes = {
+  .name       = "LED_RED",
+  .priority   = (osPriority_t)osPriorityNormal,
+  .stack_size = configMINIMAL_STACK_SIZE*2
+};
+
+const osThreadAttr_t LED_GREEN_attributes = {
+  .name       = "LED_GREEN",
+  .priority   = (osPriority_t)osPriorityNormal,
+  .stack_size = configMINIMAL_STACK_SIZE*2
+};
 
 /* Private functions ---------------------------------------------------------*/
 
@@ -59,17 +77,13 @@ int main(void)
   BSP_LED_Init(LED_RED);
   BSP_LED_Init(LED_GREEN);
   
-  /* Thread 1 definition */
-  osThreadDef(LED_RED, LED_Thread1, osPriorityNormal, 0, configMINIMAL_STACK_SIZE);
+  osKernelInitialize();
   
-  /* Thread 2 definition */
-  osThreadDef(LED_GREEN, LED_Thread2, osPriorityNormal, 0, configMINIMAL_STACK_SIZE);
-  
-  /* Start thread 1 */
-  LEDThread1Handle = osThreadCreate(osThread(LED_RED), NULL);
-  
-  /* Start thread 2 */
-  LEDThread2Handle = osThreadCreate(osThread(LED_GREEN), NULL);
+  /* Create thread 1 */
+  LEDThread1Handle = osThreadNew(LED_Thread1, NULL, &LED_RED_attributes);
+
+  /* Create thread 2 */
+  LEDThread2Handle = osThreadNew(LED_Thread2, NULL, &LED_GREEN_attributes);
   
   /* Start scheduler */
   osKernelStart();
@@ -83,17 +97,17 @@ int main(void)
   * @param  Thread not used
   * @retval None
   */
-static void LED_Thread1(void const *argument)
+static void LED_Thread1(void *argument)
 {
   uint32_t count = 0;
   (void) argument;
   
   for(;;)
   {
-    count = osKernelSysTick() + 6000;
+    count = osKernelGetTickCount() + 6000;
     
     /* Toggle LED_RED every 200 ms for 6 s */
-    while (count > osKernelSysTick())
+    while (count > osKernelGetTickCount())
     {
       BSP_LED_Toggle(LED_RED);
       
@@ -104,12 +118,12 @@ static void LED_Thread1(void const *argument)
     BSP_LED_Off(LED_RED);
     
     /* Suspend Thread 1 */
-    osThreadSuspend(NULL);
+    osThreadSuspend(LEDThread1Handle);
     
-    count = osKernelSysTick() + 6000;
+    count = osKernelGetTickCount() + 6000;
     
     /* Toggle LED_RED every 400 ms for 6 s */
-    while (count > osKernelSysTick())
+    while (count > osKernelGetTickCount())
     {
       BSP_LED_Toggle(LED_RED);
       
@@ -126,17 +140,17 @@ static void LED_Thread1(void const *argument)
   * @param  argument not used
   * @retval None
   */
-static void LED_Thread2(void const *argument)
+static void LED_Thread2(void *argument)
 {
   uint32_t count;
   (void) argument;
   
   for(;;)
   {
-    count = osKernelSysTick() + 12000;
+    count = osKernelGetTickCount() + 12000;
     
     /* Toggle LED_GREEN every 500 ms for 12 s */
-    while (count > osKernelSysTick())
+    while (count > osKernelGetTickCount())
     {
       BSP_LED_Toggle(LED_GREEN);
       
@@ -150,7 +164,7 @@ static void LED_Thread2(void const *argument)
     osThreadResume(LEDThread1Handle);
     
     /* Suspend Thread 2 */
-    osThreadSuspend(NULL);  
+    osThreadSuspend(LEDThread2Handle);  
   }
 }
 

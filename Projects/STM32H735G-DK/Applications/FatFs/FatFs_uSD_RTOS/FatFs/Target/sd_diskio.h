@@ -30,7 +30,6 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32h735g_discovery_sd.h"
-#include "cmsis_os.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 

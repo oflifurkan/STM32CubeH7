@@ -65,6 +65,10 @@ extern "C" {
  ******************************************************************************/
 #define USE_LCD_TRACE                            1U
 
+#if defined (__ARMCC_VERSION)
+#undef __GNUC__
+#endif
+
 /* Enable LCD scrolling */
 #define     LCD_SCROLL_ENABLED                   1U
 

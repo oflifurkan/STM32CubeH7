@@ -196,6 +196,16 @@
 			<locationURI>PARENT-6-PROJECT_LOC/Drivers/BSP/Components/ft5336/ft5336_reg.c</locationURI>
 		</link>
 		<link>
+			<name>Drivers/BSP/Components/GT911/gt911.c</name>
+			<type>1</type>
+			<locationURI>PARENT-6-PROJECT_LOC/Drivers/BSP/Components/gt911/gt911.c</locationURI>
+		</link>
+		<link>
+			<name>Drivers/BSP/Components/GT911/gt911_reg.c</name>
+			<type>1</type>
+			<locationURI>PARENT-6-PROJECT_LOC/Drivers/BSP/Components/gt911/gt911_reg.c</locationURI>
+		</link>
+		<link>
 			<name>Drivers/BSP/Components/IS42S16800J/is42s16800j.c</name>
 			<type>1</type>
 			<locationURI>PARENT-6-PROJECT_LOC/Drivers/BSP/Components/is42s16800j/is42s16800j.c</locationURI>

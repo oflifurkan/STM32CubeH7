@@ -18,26 +18,63 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "cmsis_os.h"
+#include "FreeRTOS.h"
+#include "cmsis_os2.h"
+
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */
+
+/* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
+/* USER CODE BEGIN PTD */
+
+/* USER CODE END PTD */
+
 /* Private define ------------------------------------------------------------*/
+/* USER CODE BEGIN PD */
+
+/* USER CODE END PD */
+
 /* Private macro -------------------------------------------------------------*/
-#define semtstSTACK_SIZE configMINIMAL_STACK_SIZE
+/* USER CODE BEGIN PM */
+
+/* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
-osSemaphoreId osSemaphore;
+/* Definitions for SEM_Thread */
+osThreadId_t SEM_ThreadHandle;
+const osThreadAttr_t SEM_Thread_attributes = {
+  .name = "SEM_Thread",
+  .priority = (osPriority_t) osPriorityNormal,
+  .stack_size = 128 * 4
+};
+/* Definitions for osSemaphore */
+osSemaphoreId_t osSemaphoreHandle;
+const osSemaphoreAttr_t osSemaphore_attributes = {
+  .name = "osSemaphore"
+};
+/* USER CODE BEGIN PV */
+
+/* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 static void MPU_Config(void);
-static void SemaphoreTest(void const *argument);
+static void SemaphoreTest(void *argument);
 static void SystemClock_Config(void);
 static void CPU_CACHE_Enable(void);
-/* Private functions ---------------------------------------------------------*/
+/* USER CODE BEGIN PFP */
+
+/* USER CODE END PFP */
+
+/* Private user code ---------------------------------------------------------*/
+/* USER CODE BEGIN 0 */
+
+/* USER CODE END 0 */
 
 /**
   * @brief  Main program
-  * @param  None
+  * @param  int
   * @retval None
   */
 int main(void)
@@ -48,6 +85,7 @@ int main(void)
   /* Enable the CPU Cache */
   CPU_CACHE_Enable();
 
+  /* USER CODE BEGIN 1 */
   /* STM32H7xx HAL library initialization:
        - TIM6 timer is configured by default as source of HAL time base, but user
          can eventually implement his proper time base source (another general purpose
@@ -59,33 +97,86 @@ int main(void)
        - Set NVIC Group Priority to 4
        - Low Level Initialization: global MSP (MCU Support Package) initialization
    */
+  /* USER CODE END 1 */
+  /* MCU Configuration--------------------------------------------------------*/
+
+  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
+  /* USER CODE BEGIN Init */
+
+  /* USER CODE END Init */
 
   /* Configure the system clock to 400 MHz */
   SystemClock_Config();
-  
+
+  /* USER CODE BEGIN SysInit */
+
+  /* USER CODE END SysInit */
+
+  /* Initialize all configured peripherals */ 
   /* Configure LED1 */
   BSP_LED_Init(LED1);
   
   /* Configure TAMPER Button */
   BSP_PB_Init(BUTTON_TAMPER, BUTTON_MODE_EXTI);  
-  
-  /* Define used semaphore */
-  osSemaphoreDef(SEM);
-  
-  /* Create the semaphore */
-  osSemaphore = osSemaphoreCreate(osSemaphore(SEM) , 1);
-  
-  /* Create the Thread that toggle LED1 */
-  osThreadDef(SEM_Thread, SemaphoreTest, osPriorityNormal, 0, semtstSTACK_SIZE);
-  osThreadCreate(osThread(SEM_Thread), (void *) osSemaphore);
-  
+  /* USER CODE BEGIN 2 */
+
+  /* USER CODE END 2 */
+
+  /* Init scheduler */
+  osKernelInitialize();
+
+  /* USER CODE BEGIN RTOS_MUTEX */
+
+  /* USER CODE END RTOS_MUTEX */
+
+  /* Create the semaphores(s) */
+  /* creation of osSemaphore */
+  osSemaphoreHandle = osSemaphoreNew(1, 1, &osSemaphore_attributes);
+
+  /* USER CODE BEGIN RTOS_SEMAPHORES */
+  if(osSemaphoreHandle == NULL)
+  {
+    Error_Handler();
+  }
+  /* USER CODE END RTOS_SEMAPHORES */
+
+  /* USER CODE BEGIN RTOS_TIMERS */
+
+  /* USER CODE END RTOS_TIMERS */
+
+  /* USER CODE BEGIN RTOS_QUEUES */
+
+  /* USER CODE END RTOS_QUEUES */
+
+  /* Create the thread(s) */
+  /* creation of SEM_Thread */
+  SEM_ThreadHandle = osThreadNew(SemaphoreTest, NULL, &SEM_Thread_attributes);
+
+  /* USER CODE BEGIN RTOS_THREADS */
+  if(SEM_ThreadHandle == NULL)
+  {
+    Error_Handler();
+  }
+  /* USER CODE END RTOS_THREADS */
+
+  /* USER CODE BEGIN RTOS_EVENTS */
+  /* add events, ... */
+  /* USER CODE END RTOS_EVENTS */
+
   /* Start scheduler */
   osKernelStart();
 
   /* We should never get here as control is now taken by the scheduler */
-  for (;;);
+  /* Infinite loop */
+  /* USER CODE BEGIN WHILE */
+  while (1)
+  {
+    /* USER CODE END WHILE */
 
+    /* USER CODE BEGIN 3 */
+  }
+  /* USER CODE END 3 */
 }
 
 /**
@@ -93,14 +184,15 @@ int main(void)
   * @param  argument: Not used
   * @retval None
   */
-static void SemaphoreTest(void const *argument)
+static void SemaphoreTest(void *argument)
 { 
-  for(;;)
+  /* Infinite loop */
+  for (;;)
   {
-    if (osSemaphore != NULL)
+    if (osSemaphoreHandle != NULL)
     {
       /* Try to obtain the semaphore */
-      if(osSemaphoreWait(osSemaphore , 0) == osOK)
+      if (osSemaphoreAcquire(osSemaphoreHandle , 0) == osOK)
       {
         BSP_LED_Toggle(LED1);
       }
@@ -192,7 +284,7 @@ static void SystemClock_Config(void)
   */
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-  osSemaphoreRelease(osSemaphore);
+  osSemaphoreRelease(osSemaphoreHandle);
 }
 
 /**
@@ -241,8 +333,21 @@ static void MPU_Config(void)
   HAL_MPU_Enable(MPU_PRIVILEGED_DEFAULT);
 }
 
-#ifdef  USE_FULL_ASSERT
-
+/**
+  * @brief  This function is executed in case of error occurrence.
+  * @retval None
+  */
+void Error_Handler(void)
+{
+  /* USER CODE BEGIN Error_Handler_Debug */
+  /* User can add his own implementation to report the HAL error return state */
+  /* Infinite loop */
+  while (1)
+  {
+  }
+  /* USER CODE END Error_Handler_Debug */
+}
+#ifdef USE_FULL_ASSERT
 /**
   * @brief  Reports the name of the source file and the source line number
   *         where the assert_param error has occurred.
@@ -252,6 +357,7 @@ static void MPU_Config(void)
   */
 void assert_failed(uint8_t *file, uint32_t line)
 {
+  /* USER CODE BEGIN 6 */
   /* User can add his own implementation to report the file name and line number,
      ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
 
@@ -259,14 +365,6 @@ void assert_failed(uint8_t *file, uint32_t line)
   while (1)
   {
   }
+  /* USER CODE END 6 */
 }
-#endif
-
-/**
-  * @}
-  */
-
-/**
-  * @}
-  */
-
+#endif /* USE_FULL_ASSERT */

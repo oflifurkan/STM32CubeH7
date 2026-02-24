@@ -45,7 +45,7 @@ In this example:
     - In the thread : Initialize OpenAMP MW which initializes/configures HSEM peripheral through HAL
       and setup openamp-rpmsg framework infrastructure (Master Side).
     - CPU2, after wakeup, initializes OpenAMP MW which initializes/configures HSEM peripheral through HAL
-    and setup openamp-rpmsg framework infrastructure(Remote Side).
+      and setup openamp-rpmsg framework infrastructure(Remote Side).
     - CPU2 creates a communication channel(called rpmsg channel)
 
     - In a loop, each CPU receives the counter "message", increments it, then sends it to the second CPU.
@@ -67,7 +67,18 @@ In this example:
     + The OpenAMP Library throws the following warnings
      *) ARMCC/ICCARM
       - Middlewares/Third_Party/OpenAMP/open-amp/lib/rpmsg/rpmsg_virtio.c(236): warning:  #111-D: statement is unreachable
-               return false;
+        return false;
+
+      *) ARMCC_VERSION (AC6)
+
+      - Middlewares/Third_Party/OpenAMP/libmetal/lib/system/generic/condition.c(29): warning: incompatible pointer types passing 'atomic_int *' (aka '_Atomic(int) *') to parameter of type 'int *' [-Wincompatible-pointer-types]
+        if (!atomic_compare_exchange_strong(&cv->m->v, &tmpm->v, m->v)) {
+                                                       ^~~~~~~~
+      - ..\ARM\ARMCLANG\Bin\..\include\stdatomic.h(137): note: expanded from macro 'atomic_compare_exchange_strong'
+        #define atomic_compare_exchange_strong(object, expected, desired) __c11_atomic_compare_exchange_strong(object, expected, desired, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST)
+
+      ==> cause: Related to the use of C11 atomics with ARMCLANG
+
     *) GCC
      - Middlewares/Third_Party/OpenAMP/open-amp/lib/include/openamp/rpmsg.h:291:2: warning: argument 2 null where non-null expected [-Wnonnull]
      - Middlewares/Third_Party/OpenAMP/libmetal/lib/system/generic/irq.c:43:40: warning: missing braces around initializer [-Wmissing-braces]
@@ -75,20 +86,20 @@ In this example:
     + The application the following warnings
       *) ARMCC
       - ../Common/Src/openamp.c(36): warning:  #1296-D: extended constant initialiser used
-           static metal_phys_addr_t shm_physmap[] = { SHM_START_ADDRESS };
+        static metal_phys_addr_t shm_physmap[] = { SHM_START_ADDRESS };
 
-      -  ../Common/Src/rsc_table.c(104): warning:  #1296-D: extended constant initialiser used
-               .vring0 = {VRING_TX_ADDRESS, VRING_ALIGNMENT, VRING_NUM_BUFFS, VRING0_ID, 0},
+      - ../Common/Src/rsc_table.c(104): warning:  #1296-D: extended constant initialiser used
+        .vring0 = {VRING_TX_ADDRESS, VRING_ALIGNMENT, VRING_NUM_BUFFS, VRING0_ID, 0},
 
-      -  ../Common/Src/rsc_table.c(105): warning:  #1296-D: extended constant initialiser used
-               .vring1 = {VRING_RX_ADDRESS, VRING_ALIGNMENT, VRING_NUM_BUFFS, VRING1_ID, 0},
+      - ../Common/Src/rsc_table.c(105): warning:  #1296-D: extended constant initialiser used
+        .vring1 = {VRING_RX_ADDRESS, VRING_ALIGNMENT, VRING_NUM_BUFFS, VRING1_ID, 0},
 
       ==> cause:  Syntax to refer symbols defined in the linker files, in C defines in not accepted by the compiler
                   but it doesn't impact the functional aspect.
 
      *) GCC
        - warning: assignment discards 'volatile' qualifier from pointer target type [-Wdiscarded-qualifiers]
-          *table_ptr = &resource_table
+         *table_ptr = &resource_table
        ===> cause: the resource_table is a shared memory between CM4 and CM7 thus it should be volatile to avoid
                    compiler optimizations.
 

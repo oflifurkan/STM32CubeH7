@@ -33,7 +33,6 @@ extern "C" {
 #include "stm32h743i_eval_io.h"
 #include "stm32h743i_eval_sd.h"
 
-#include "cmsis_os.h"
 /* FatFs includes component */
 #include "ff_gen_drv.h"
 #include "sd_diskio_dma_rtos.h"

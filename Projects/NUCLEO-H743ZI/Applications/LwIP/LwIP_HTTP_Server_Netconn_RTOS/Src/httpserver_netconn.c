@@ -1,8 +1,8 @@
 /**
   ******************************************************************************
-  * @file    LwIP/LwIP_HTTP_Server_Netconn_RTOS/Src/httpser-netconn.c 
+  * @file    LwIP/LwIP_HTTP_Server_Netconn_RTOS/Src/httpser-netconn.c
   * @author  MCD Application Team
-  * @brief   Basic http server implementation using LwIP netconn API  
+  * @brief   Basic http server implementation using LwIP netconn API
   ******************************************************************************
   * @attention
   *
@@ -23,8 +23,9 @@
 #include "lwip/apps/fs.h"
 #include "string.h"
 #include "httpserver_netconn.h"
-#include "cmsis_os.h"
-
+#include "cmsis_os2.h"
+#include "FreeRTOS.h"
+#include "task.h"
 #include <stdio.h>
 
 /* Private typedef -----------------------------------------------------------*/
@@ -137,57 +138,57 @@ static const unsigned char PAGE_START[] = {
 0x62,0x65,0x72,0x20,0x6f,0x66,0x20,0x70,0x61,0x67,0x65,0x20,0x68,0x69,0x74,0x73,
 0x3a,0x26,0x6e,0x62,0x73,0x70,0x3b,0x0d,0x0a,0x0d,0x0a,0x3c,0x2f,0x73,0x70,0x61,
 0x6e,0x3e,0x3c,0x2f,0x73,0x6d,0x61,0x6c,0x6c,0x3e,0x0d,0x0a,0x3c,0x2f,0x62,0x6f,
-0x64,0x79,0x3e,0x3c,0x2f,0x68,0x74,0x6d,0x6c,0x3e, 0
+0x64,0x79,0x3e,0x3c,0x2f,0x68,0x74,0x6d,0x6c,0x3e,0
 };
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
 
 /**
-  * @brief serve tcp connection  
-  * @param conn: pointer on connection structure 
+  * @brief serve tcp connection
+  * @param conn: pointer on connection structure
   * @retval None
   */
-static void http_server_serve(struct netconn *conn) 
+static void http_server_serve(struct netconn *conn)
 {
   struct netbuf *inbuf;
   err_t recv_err;
   char* buf;
   u16_t buflen;
   struct fs_file file;
-  
-  /* Read the data from the port, blocking if nothing yet there. 
+
+  /* Read the data from the port, blocking if nothing yet there.
    We assume the request (the part we care about) is in one netbuf */
   recv_err = netconn_recv(conn, &inbuf);
-  
+
   if (recv_err == ERR_OK)
   {
-    if (netconn_err(conn) == ERR_OK) 
+    if (netconn_err(conn) == ERR_OK)
     {
       netbuf_data(inbuf, (void**)&buf, &buflen);
-    
+
       /* Is this an HTTP GET command? (only check the first 5 chars, since
       there are other formats for GET, and we're keeping it very simple )*/
       if ((buflen >=5) && (strncmp(buf, "GET /", 5) == 0))
       {
-        /* Check if request to get ST.gif */ 
+        /* Check if request to get ST.gif */
         if (strncmp((char const *)buf,"GET /STM32H7xx_files/ST.gif",27)==0)
         {
-          fs_open(&file, "/STM32H7xx_files/ST.gif"); 
-          netconn_write(conn, (const unsigned char*)(file.data), (size_t)file.len, NETCONN_NOCOPY);
-          fs_close(&file);
-        }   
-        /* Check if request to get stm32.jpg */
-        else if (strncmp((char const *)buf,"GET /STM32H7xx_files/stm32.jpg",30)==0)
-        {
-          fs_open(&file, "/STM32H7xx_files/stm32.jpg"); 
+          fs_open(&file, "/STM32H7xx_files/ST.gif");
           netconn_write(conn, (const unsigned char*)(file.data), (size_t)file.len, NETCONN_NOCOPY);
           fs_close(&file);
         }
-        else if (strncmp((char const *)buf,"GET /STM32H7xx_files/logo.jpg", 29) == 0)                                           
+        /* Check if request to get stm32.jpg */
+        else if (strncmp((char const *)buf,"GET /STM32H7xx_files/stm32.jpg",30)==0)
+        {
+          fs_open(&file, "/STM32H7xx_files/stm32.jpg");
+          netconn_write(conn, (const unsigned char*)(file.data), (size_t)file.len, NETCONN_NOCOPY);
+          fs_close(&file);
+        }
+        else if (strncmp((char const *)buf,"GET /STM32H7xx_files/logo.jpg", 29) == 0)
         {
           /* Check if request to get ST logo.jpg */
-          fs_open(&file, "/STM32H7xx_files/logo.jpg"); 
+          fs_open(&file, "/STM32H7xx_files/logo.jpg");
           netconn_write(conn, (const unsigned char*)(file.data), (size_t)file.len, NETCONN_NOCOPY);
           fs_close(&file);
         }
@@ -196,26 +197,26 @@ static void http_server_serve(struct netconn *conn)
            /* Load dynamic page */
            DynWebPage(conn);
         }
-        else if((strncmp(buf, "GET /STM32H7xx.html", 19) == 0)||(strncmp(buf, "GET / ", 6) == 0)) 
+        else if((strncmp(buf, "GET /STM32H7xx.html", 19) == 0)||(strncmp(buf, "GET / ", 6) == 0))
         {
           /* Load STM32H7xx page */
-          fs_open(&file, "/STM32H7xx.html"); 
+          fs_open(&file, "/STM32H7xx.html");
           netconn_write(conn, (const unsigned char*)(file.data), (size_t)file.len, NETCONN_NOCOPY);
           fs_close(&file);
         }
-        else 
+        else
         {
           /* Load Error page */
-          fs_open(&file, "/404.html"); 
+          fs_open(&file, "/404.html");
           netconn_write(conn, (const unsigned char*)(file.data), (size_t)file.len, NETCONN_NOCOPY);
           fs_close(&file);
         }
-      }      
+      }
     }
   }
   /* Close the connection (server closes in HTTP) */
   netconn_close(conn);
-  
+
   /* Delete the buffer (netconn_recv gives us ownership,
    so we have to make sure to deallocate the buffer) */
   netbuf_delete(inbuf);
@@ -228,24 +229,24 @@ static void http_server_serve(struct netconn *conn)
   * @retval None
   */
 static void http_server_netconn_thread(void *arg)
-{ 
+{
   struct netconn *conn, *newconn;
   err_t err, accept_err;
-  
+
   /* Create a new TCP connection handle */
   conn = netconn_new(NETCONN_TCP);
-  
+
   if (conn!= NULL)
   {
     /* Bind to port 80 (HTTP) with default IP address */
     err = netconn_bind(conn, NULL, 80);
-    
+
     if (err == ERR_OK)
     {
       /* Put the connection into LISTEN state */
       netconn_listen(conn);
-  
-      while(1) 
+
+      while(1)
       {
         /* accept any icoming connection */
         accept_err = netconn_accept(conn, &newconn);
@@ -263,19 +264,19 @@ static void http_server_netconn_thread(void *arg)
 }
 
 /**
-  * @brief  Initialize the HTTP server (start its thread) 
+  * @brief  Initialize the HTTP server (start its thread)
   * @param  none
   * @retval None
   */
 void http_server_netconn_init()
 {
-  sys_thread_new("HTTP", http_server_netconn_thread, NULL, DEFAULT_THREAD_STACKSIZE, WEBSERVER_THREAD_PRIO);
+  sys_thread_new("HTTP", http_server_netconn_thread, NULL, DEFAULT_THREAD_STACKSIZE * 4, WEBSERVER_THREAD_PRIO);
 }
 
 /**
-  * @brief  Create and send a dynamic Web Page. This page contains the list of 
-  *         running tasks and the number of page hits. 
-  * @param  conn pointer on connection structure 
+  * @brief  Create and send a dynamic Web Page. This page contains the list of
+  *         running tasks and the number of page hits.
+  * @param  conn pointer on connection structure
   * @retval None
   */
 void DynWebPage(struct netconn *conn)
@@ -291,11 +292,11 @@ void DynWebPage(struct netconn *conn)
   strcat(PAGE_BODY, pagehits);
   strcat((char *)PAGE_BODY, "<pre><br>Name          State  Priority  Stack   Num" );
   strcat((char *)PAGE_BODY, "<br>---------------------------------------------<br>");
-    
+
   /* The list of tasks and their status */
-  osThreadList((unsigned char *)(PAGE_BODY + strlen(PAGE_BODY)));
-  strcat((char *)PAGE_BODY, "<br><br>---------------------------------------------");
-  strcat((char *)PAGE_BODY, "<br>B : Blocked, R : Ready, D : Deleted, S : Suspended<br>");
+  vTaskList(( char *)(PAGE_BODY + strlen(PAGE_BODY)));
+  strcat((char *)PAGE_BODY, "<br><br>--------------------------------------------");
+  strcat((char *)PAGE_BODY, "<br>X : Running, B : Blocked, R : Ready, D : Deleted, S : Suspended<br>");
 
   /* Send the dynamically generated page */
   netconn_write(conn, PAGE_START, strlen((char*)PAGE_START), NETCONN_COPY);

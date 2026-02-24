@@ -32,6 +32,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "tcpecho.h"
 #include "lwip/opt.h"
+#include "FreeRTOS.h"
 
 #if LWIP_NETCONN
 
@@ -89,10 +90,9 @@ static void tcpecho_thread(void *arg)
   }
 }
 /*-----------------------------------------------------------------------------------*/
-void
-tcpecho_init(void)
+void tcpecho_init(void)
 {
-  sys_thread_new("tcpecho_thread", tcpecho_thread, NULL, (configMINIMAL_STACK_SIZE*2), TCPECHO_THREAD_PRIO);
+  sys_thread_new("tcpecho_thread", tcpecho_thread, NULL, (configMINIMAL_STACK_SIZE*8), TCPECHO_THREAD_PRIO);
 }
 /*-----------------------------------------------------------------------------------*/
 

@@ -94,7 +94,7 @@ RTOS, FreeRTOS, Threading, Queue, Low power, Sleep mode, Blocked state, Transmit
     - FreeRTOS/FreeRTOS_LowPower/Inc/stm32h7xx_hal_conf.h         HAL Library Configuration file
     - FreeRTOS/FreeRTOS_LowPower/Inc/stm32h7xx_it.h               Interrupt handlers header file
     - FreeRTOS/FreeRTOS_LowPower/Inc/FreeRTOSConfig.h             FreeRTOS Configuration file
-    - FreeRTOS/FreeRTOS_LowPower/Inc/stm32h7xx_nucleo_conf.h    BSP configuration file
+    - FreeRTOS/FreeRTOS_LowPower/Inc/stm32h7xx_nucleo_conf.h      BSP configuration file
 
 @par Hardware and Software environment
 
@@ -110,5 +110,4 @@ In order to make the program work, you must do the following:
  - Rebuild all files and load your image into target memory
  - Run the example
 
-
- */
+*/

@@ -60,7 +60,7 @@ HAL_StatusTypeDef HAL_InitTick (uint32_t TickPriority)
   uint32_t              uwTimclock, uwAPB1Prescaler;
   uint32_t              uwPrescalerValue;
   uint32_t              pFLatency;
-  
+
   /*Configure the TIM6 IRQ priority */
   if (TickPriority < (1UL << __NVIC_PRIO_BITS))
   {
@@ -74,16 +74,16 @@ HAL_StatusTypeDef HAL_InitTick (uint32_t TickPriority)
   {
     return HAL_ERROR;
   }
-  
+
   /* Enable TIM6 clock */
   __HAL_RCC_TIM6_CLK_ENABLE();
-  
+
   /* Get clock configuration */
   HAL_RCC_GetClockConfig(&clkconfig, &pFLatency);
-  
+
   /* Get APB1 prescaler */
   uwAPB1Prescaler = clkconfig.APB1CLKDivider;
-  
+
   /* Compute TIM6 clock */
   if (uwAPB1Prescaler == RCC_HCLK_DIV1) 
   {
@@ -93,13 +93,13 @@ HAL_StatusTypeDef HAL_InitTick (uint32_t TickPriority)
   {
     uwTimclock = 2UL * HAL_RCC_GetPCLK1Freq();
   }
-  
+
   /* Compute the prescaler value to have TIM6 counter clock equal to 1MHz */
   uwPrescalerValue = (uint32_t) ((uwTimclock / 1000000U) - 1U);
-  
+
   /* Initialize TIM6 */
   TimHandle.Instance = TIM6;
-  
+
   /* Initialize TIMx peripheral as follow:
   + Period = [(TIM6CLK/1000) - 1]. to have a (1/1000) s time base.
   + Prescaler = (uwTimclock/1000000 - 1) to have a 1MHz counter clock.
@@ -115,7 +115,7 @@ HAL_StatusTypeDef HAL_InitTick (uint32_t TickPriority)
     /* Start the TIM time Base generation in interrupt mode */
     return HAL_TIM_Base_Start_IT(&TimHandle);
   }
-  
+
   /* Return function status */
   return HAL_ERROR;
 }

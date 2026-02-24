@@ -21,26 +21,32 @@
 
 /* Private typedef ----------------------------------------------------------- */
 /* Private define ------------------------------------------------------------ */
+#define HSEM_ID_0 (0U) /* HW semaphore 0 */
 /* Private macro ------------------------------------------------------------- */
 /* Private variables --------------------------------------------------------- */
 USBH_HandleTypeDef hUSB_Host;
 HID_ApplicationTypeDef Appli_state = APPLICATION_IDLE;
-osMessageQId AppliEvent;
-#define HSEM_ID_0 (0U) /* HW semaphore 0 */
+osMessageQueueId_t AppliEvent;
+const osThreadAttr_t userThreadAttr = {
+  .name = "USER_Thread",
+  .stack_size = 8 * configMINIMAL_STACK_SIZE,
+  .priority = osPriorityNormal
+};
+
 /* Private function prototypes ----------------------------------------------- */
 static void SystemClock_Config(void);
 static void USBH_UserProcess(USBH_HandleTypeDef * phost, uint8_t id);
 static void HID_InitApplication(void);
-static void StartThread(void const *argument);
+static void StartThread(void *argument);
 static void MPU_Config(void);
 static void CPU_CACHE_Enable(void);
 /* Private functions --------------------------------------------------------- */
 
 /**
-* @brief  Main program
-* @param  None
-* @retval None
-*/
+  * @brief  Main program
+  * @param  None
+  * @retval None
+  */
 int main(void)
 {
   /* This project calls firstly two functions in order to configure MPU feature
@@ -71,14 +77,14 @@ int main(void)
   /* Enable the USB voltage level detector */
   HAL_PWREx_EnableUSBVoltageDetector();
 
+  /* Init scheduler */
+  osKernelInitialize();
+
   /* Start task */
-  osThreadDef(USER_Thread, StartThread, osPriorityNormal, 0,
-              8 * configMINIMAL_STACK_SIZE);
-  osThreadCreate(osThread(USER_Thread), NULL);
+  osThreadNew(StartThread, NULL, &userThreadAttr);
 
   /* Create Application Queue */
-  osMessageQDef(osqueue, 1, uint16_t);
-  AppliEvent = osMessageCreate(osMessageQ(osqueue), NULL);
+  AppliEvent = osMessageQueueNew(1, sizeof(uint16_t), NULL);
 
   /* Start scheduler */
   osKernelStart();
@@ -88,13 +94,14 @@ int main(void)
 }
 
 /**
-* @brief  Start task
-* @param  pvParameters not used
-* @retval None
-*/
-static void StartThread(void const *argument)
+  * @brief  Start task
+  * @param  pvParameters not used
+  * @retval None
+  */
+static void StartThread(void *argument)
 {
-  osEvent event;
+  uint16_t QueueMsg = 0;
+  osStatus_t status;
 
   /* Init HID Application */
   HID_InitApplication();
@@ -110,11 +117,11 @@ static void StartThread(void const *argument)
 
   for (;;)
   {
-    event = osMessageGet(AppliEvent, osWaitForever);
+    status = osMessageQueueGet(AppliEvent, &QueueMsg, NULL, osWaitForever);
 
-    if (event.status == osEventMessage)
+    if (status == osOK)
     {
-      switch (event.value.v)
+      switch (QueueMsg)
       {
       case APPLICATION_DISCONNECT:
         Appli_state = APPLICATION_DISCONNECT;
@@ -132,28 +139,32 @@ static void StartThread(void const *argument)
 }
 
 /**
-* @brief  User Process
-* @param  phost: Host Handle
-* @param  id: Host Library user message ID
-* @retval None
-*/
+  * @brief  User Process
+  * @param  phost: Host Handle
+  * @param  id: Host Library user message ID
+  * @retval None
+  */
 static void USBH_UserProcess(USBH_HandleTypeDef * phost, uint8_t id)
 {
+  uint16_t QueueMsg;
   switch (id)
   {
   case HOST_USER_SELECT_CONFIGURATION:
     break;
 
   case HOST_USER_DISCONNECTION:
-    osMessagePut(AppliEvent, APPLICATION_DISCONNECT, 0);
+    QueueMsg = APPLICATION_DISCONNECT;
+    osMessageQueuePut(AppliEvent, &QueueMsg, 0, 0);
     break;
 
   case HOST_USER_CLASS_ACTIVE:
-    osMessagePut(AppliEvent, APPLICATION_READY, 0);
+    QueueMsg = APPLICATION_READY;
+    osMessageQueuePut(AppliEvent, &QueueMsg, 0, 0);
     break;
 
   case HOST_USER_CONNECTION:
-    osMessagePut(AppliEvent, APPLICATION_START, 0);
+    QueueMsg = APPLICATION_START;
+    osMessageQueuePut(AppliEvent, &QueueMsg, 0, 0);
     break;
 
   default:
@@ -162,10 +173,10 @@ static void USBH_UserProcess(USBH_HandleTypeDef * phost, uint8_t id)
 }
 
 /**
-* @brief  HID application Init.
-* @param  None
-* @retval None
-*/
+  * @brief  HID application Init.
+  * @param  None
+  * @retval None
+  */
 static void HID_InitApplication(void)
 {
   /* Configure Joystick in EXTI mode */
@@ -175,7 +186,7 @@ static void HID_InitApplication(void)
   BSP_LED_Init(LED1);
   BSP_LED_Init(LED3);
 
-/* Initialize the LCD */
+  /* Initialize the LCD */
   BSP_LCD_Init(0, LCD_ORIENTATION_LANDSCAPE);
   UTIL_LCD_SetFuncDriver(&LCD_Driver);
 

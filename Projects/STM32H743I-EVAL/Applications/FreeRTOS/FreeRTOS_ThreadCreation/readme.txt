@@ -86,18 +86,12 @@ RTOS, FreeRTOS, Threading
     - FreeRTOS/FreeRTOS_ThreadCreation/Inc/stm32h7xx_it.h        Interrupt handlers header file
     - FreeRTOS/FreeRTOS_ThreadCreation/Inc/FreeRTOSConfig.h      FreeRTOS Configuration file
 
-@Note It is possible to run the application either using the CMSIS-RTOS v1 or
-      v2. To use the CMSIS-RTOS v2 API a preprocessor "USE_CMSIS_V2" define is
-      required.(already done in the preconfigured projects provided with this application).
-
 @par Hardware and Software environment
 
   - This application runs on STM32H743xx devices.
     
   - This application has been tested with STM32H743I-EVAL board and can be
     easily tailored to any other supported device and development board.
-    
-
 
 @par How to use it ?
 
@@ -105,6 +99,5 @@ In order to make the program work, you must do the following:
  - Open your preferred toolchain 
  - Rebuild all files and load your image into target memory
  - Run the application
- 
 
  */

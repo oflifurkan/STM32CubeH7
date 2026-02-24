@@ -33,7 +33,7 @@
 /* The time to block waiting for input. */
 #define TIME_WAITING_FOR_INPUT                 ( osWaitForever )
 /* Stack size of the interface thread */
-#define INTERFACE_THREAD_STACK_SIZE            ( 350 )
+#define INTERFACE_THREAD_STACK_SIZE            ( 768 )
 
 /* Define those to better describe your network interface. */
 #define IFNAME0 's'
@@ -91,10 +91,22 @@ ETH_TxPacketConfig TxConfig;
 
 lan8742_Object_t LAN8742;
 
-osSemaphoreId RxPktSemaphore = NULL; /* Semaphore to signal incoming packets */
+osSemaphoreId_t RxPktSemaphore = NULL; /* Semaphore to signal incoming packets */
+
+/* Attributes for creating the RxPktSemaphore binary semaphore */
+osSemaphoreAttr_t sem_attr = {
+  .name = "RxPktSem"
+};
+
+/* Handle attributes for the Ethernet interface thread */
+static const osThreadAttr_t EthIfThreadAttr = {
+  .name = "EthIf",
+  .priority = osPriorityRealtime,
+  .stack_size = INTERFACE_THREAD_STACK_SIZE
+};
 
 /* Private function prototypes -----------------------------------------------*/
-static void ethernetif_input( void const * argument );
+static void ethernetif_input( void * argument );
 u32_t    sys_now(void);
 void     pbuf_free_custom(struct pbuf *p);
 
@@ -173,11 +185,10 @@ static void low_level_init(struct netif *netif)
   TxConfig.CRCPadCtrl = ETH_CRC_PAD_INSERT;
    
   /* create a binary semaphore used for informing ethernetif of frame reception */
-  RxPktSemaphore = xSemaphoreCreateBinary();
+  RxPktSemaphore = osSemaphoreNew(1, 0, &sem_attr);
   
   /* create the task that handles the ETH_MAC */
-  osThreadDef(EthIf, ethernetif_input, osPriorityRealtime, 0, INTERFACE_THREAD_STACK_SIZE);
-  osThreadCreate (osThread(EthIf), netif);
+  osThreadNew(ethernetif_input, netif, &EthIfThreadAttr);
   
   /* Set PHY IO functions */
   LAN8742_RegisterBusIO(&LAN8742, &LAN8742_IOCtx);
@@ -335,14 +346,14 @@ static struct pbuf * low_level_input(struct netif *netif)
   *
   * @param netif the lwip network interface structure for this ethernetif
   */
-void ethernetif_input( void const * argument )
+void ethernetif_input( void * argument )
 {
   struct pbuf *p;
   struct netif *netif = (struct netif *) argument;
   
   for( ;; )
   {
-    if (osSemaphoreWait( RxPktSemaphore, TIME_WAITING_FOR_INPUT)==osOK)
+    if (osSemaphoreAcquire( RxPktSemaphore, TIME_WAITING_FOR_INPUT)==osOK)
     {
       do
       {

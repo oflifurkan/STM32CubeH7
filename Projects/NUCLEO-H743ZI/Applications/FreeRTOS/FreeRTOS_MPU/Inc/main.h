@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * @file    FreeRTOS/FreeRTOS_MPU/Inc/main.h
-  * @author  MCD Application Team  
+  * @author  MCD Application Team
   * @brief   Header file of main.c
   ******************************************************************************
   * @attention
@@ -30,13 +30,38 @@ extern "C" {
 
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
+/* USER CODE BEGIN EC */
+
+/* USER CODE END EC */
+
 /* Exported macro ------------------------------------------------------------*/
-/* Exported functions ------------------------------------------------------- */
+/* USER CODE BEGIN EM */
+
+/* USER CODE END EM */
+
+/* Exported functions prototypes ---------------------------------------------*/
+void Error_Handler(void);
+
+/* USER CODE BEGIN EFP */
+void MemManage_Recover(void);
+/* USER CODE END EFP */
+
+/* Private defines -----------------------------------------------------------*/
+
+#define LED_BLUE_Pin GPIO_PIN_14
+#define LED_BLUE_GPIO_Port GPIOB
+#define LED_GREEN_Pin GPIO_PIN_0
+#define LED_GREEN_GPIO_Port GPIOB
+#define USART_TX_Pin GPIO_PIN_8
+#define USART_TX_GPIO_Port GPIOD
+#define USART_RX_Pin GPIO_PIN_9
+#define USART_RX_GPIO_Port GPIOD
+/* USER CODE BEGIN Private defines */
+
+/* USER CODE END Private defines */
 
 #ifdef __cplusplus
 }
 #endif
 
 #endif /* __MAIN_H */
-
-

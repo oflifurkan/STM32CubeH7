@@ -1,9 +1,9 @@
 /**
   ******************************************************************************
   * @file    FreeRTOS/FreeRTOS_MPU/Src/stm32h7xx_it.c
-  * @author  MCD Application Team  
+  * @author  MCD Application Team
   * @brief   Main Interrupt Service Routines.
-  *          This file provides template for all exceptions handler and 
+  *          This file provides template for all exceptions handler and
   *          peripherals interrupt service routine.
   ******************************************************************************
   * @attention
@@ -64,6 +64,8 @@ void MemManage_Handler(void)
   /* Go to infinite loop when Memory Manage exception occurs */
   while (1)
   {
+    MemManage_Recover();
+    return;
   }
 }
 
@@ -100,9 +102,10 @@ void UsageFault_Handler(void)
   */
 void DebugMon_Handler(void)
 {
+  while (1)
+  {
+  }
 }
-
-
 
 /******************************************************************************/
 /*                 STM32H7xx Peripherals Interrupt Handlers                   */
@@ -119,4 +122,5 @@ void DebugMon_Handler(void)
 /*void PPP_IRQHandler(void)
 {
 }*/
+
 

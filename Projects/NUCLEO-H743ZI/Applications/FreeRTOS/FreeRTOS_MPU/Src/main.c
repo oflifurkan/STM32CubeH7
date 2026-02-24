@@ -1,7 +1,8 @@
+/* USER CODE BEGIN Header */
 /**
   ******************************************************************************
   * @file    FreeRTOS/FreeRTOS_MPU/Src/main.c
-  * @author  MCD Application Team  
+  * @author  MCD Application Team
   * @brief   Main Program file of the FreeRTOS MPU application.
   ******************************************************************************
   * @attention
@@ -15,802 +16,564 @@
   *
   ******************************************************************************
   */
-
+/* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
-/* Scheduler includes. */
+#include "main.h"
 #include "FreeRTOS.h"
+#include "cmsis_os2.h"
+
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */
 #include "task.h"
 #include "queue.h"
-
-#include "main.h"
+#include "stdio.h"
+#if defined(__ICCARM__)
+#include <LowLevelIOInterface.h>
+#endif /* __ICCARM__ */
+/* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
-/* Private define ------------------------------------------------------------*/
-/* Definitions for the messages that can be sent to the check task. */
-#define TEST_1_STILL_EXECUTING ( 0 )
-#define TEST_2_STILL_EXECUTING ( 1 )
-#define CYCLE_RESET            ( 2 )
+/* USER CODE BEGIN PTD */
+typedef struct
+{
+  uint32_t address;
+  uint32_t handle;
+  uint32_t psp;
+} FaultInfo_t;
+/* USER CODE END PTD */
 
-#define TEST_TASK_1_PARAMETER	( ( void * ) 0x11112222 )
+/* Private define ------------------------------------------------------------*/
+/* USER CODE BEGIN PD */
+#define NUMBER_OF_TASKS (2)
+
+/* Return address offset within stack frame */
+#define RETURN_ADDRESS_OFFSET (6U)
+
+/* Mask used to identify whether instruction is 16 bits or 32 bits */
+#define INSTRUCTION_32BIT_Msk (0xE000)
+
+/* Example config */
+/* Number of faults a task can cause before it gets deleted */
+#define EXAMPLE_FAULT_COUNT_THRESHOLD (3)
+
+#define EXAMPLE_SHARED_MEMORY_SIZE (512U)
+/* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
-#if defined(__ICCARM__)
-#define mainALIGN_TO( x )
-#else
-#define mainALIGN_TO( x )				__attribute__((aligned(x)))
-#endif
-/* Private function prototypes -----------------------------------------------*/	
-static void SystemClock_Config(void);
-static void CPU_CACHE_Enable(void);
-void vApplicationIdleHook( void );
-void vApplicationTickHook( void );
-#if configCHECK_FOR_STACK_OVERFLOW
-void vApplicationStackOverflowHook( TaskHandle_t pxTask, char *pcTaskName );
-#endif
+/* USER CODE BEGIN PM */
 
-/*
- * Prototype for the two test tasks, which execute in User mode.
- * Amongst other things, Both tasks execute at the idle priority so will get 
- * preempted regularly. Each task repeatedly sends a
- * message on a queue to a 'check' task so the check task knows the test task 
- * is still executing and has not detected any errors.  If an error
- * is detected within the task the task is simply deleted so it no longer sends
- * messages.
- *
- * Both tasks obtain access to the queue handle in different ways; 
- * Test1Task() is created in Privileged mode and copies the queue handle to 
- * its local stack before setting itself to User mode, and Test2Task() receives 
- * the task handle using its parameter.
- */
-static void Test1Task( void *pvParameters );
-static void Test2Task( void *pvParameters );
-
-/*
- * Prototype for the check task.  The check task demonstrates various features
- * of the MPU before entering a loop where it waits for messages to arrive on a
- * queue.
- *
- * Two types of messages can be processes:
- *
- * 1) "I'm Alive" messages sent from the first two test tasks as described above.
- *
- * 2) "reset cycle" sent periodically by the tick hook function (and
- *    therefore from within an interrupt) which commands the check task to verify
- *    the execution of the application
- */
-static void CheckTask( void *pvParameters );
-
-/*
- * Prototype for a task created in User mode using the original vTaskCreate()
- * API function.  The task demonstrates the characteristics of such a task,
- * before simply deleting itself.
- */
-static void UserModeTask( void *pvParameters );
-
-/*
- * Prototype for a task created in Privileged mode using the original
- * vTaskCreate() API function.  The task demonstrates the characteristics of
- * such a task, before simply deleting itself.
- */
-static void PrivilegedModeTask( void *pvParameters );
-
-/*
- * Used by the two test tasks to send messages to the check task.  
- * The message just lets the check task know that the tasks are still functioning 
- * correctly.  If a test task detects an error it will delete itself, 
- * and in so doing prevent itself from sending any more 'I'm Alive' messages 
- * to the check task.
- */
-static void SendImAlive( QueueHandle_t xHandle, uint32_t ulTaskNumber );
-
-/*
- * The check task is created with access to three memory regions (plus its
- * stack).  Each memory region is configured with different parameters and
- * TestMemoryRegions() demonstrates what can and cannot be accessed for each
- * region.  It also demonstrates a task that was created
- * as a privileged task settings its own privilege level down to that of a user
- * task.
- */
-static void TestMemoryRegions( void );
+/* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
-/* The handle of the queue used to communicate between tasks and between tasks
-and interrupts.  Note that this is a global scope variable that falls outside of
-any MPU region.  As such other techniques have to be used to allow the tasks
-to gain access to the queue.  See the comments in the tasks themselves for
-further information. */
-QueueHandle_t xGlobalScopeCheckQueue = NULL;
 
-#if defined (__CC_ARM)
-const uint32_t * __FLASH_segment_start__= ( uint32_t * ) 0x08000000UL;
-const uint32_t * __FLASH_segment_end__ = ( uint32_t * )0x081FFFFFUL;
-const uint32_t * __SRAM_segment_start__= ( uint32_t * )0x20000000UL;
-const uint32_t * __SRAM_segment_end__= ( uint32_t * )0x2001FFFFUL;
-const uint32_t * __privileged_functions_start__= ( uint32_t * )0x08000000UL;
-const uint32_t * __privileged_functions_end__= ( uint32_t * )0x08007FFFUL;
-const uint32_t * __privileged_data_start__= ( uint32_t * )0x20000000UL;
-const uint32_t * __privileged_data_end__= ( uint32_t * )0x20007FFFUL;
-const uint32_t * __syscalls_flash_start__= ( uint32_t * )0x08008000UL;
-const uint32_t * __syscalls_flash_end__= ( uint32_t * )0x08008FFFUL;
-#elif defined (__GNUC__)
-extern uint32_t __FLASH_segment_start__[];
-extern uint32_t __FLASH_segment_end__[];
-extern uint32_t __SRAM_segment_end__[];
-extern uint32_t __privileged_functions_start__[];
-extern uint32_t __privileged_functions_end__[];
-extern uint32_t __privileged_data_start__[];
-extern uint32_t __privileged_data_end__[];
-#else
-extern uint32_t __FLASH_segment_start__[];
-extern uint32_t __FLASH_segment_end__[];
-extern uint32_t __SRAM_segment_end__[];
-extern uint32_t __privileged_functions_start__[];
-extern uint32_t __privileged_functions_end__[];
-extern uint32_t __privileged_data_start__[];
-extern uint32_t __privileged_data_end__[];
-extern uint32_t __syscalls_flash_start__[];
-extern uint32_t __syscalls_flash_end__  [];
+UART_HandleTypeDef huart3;
+
+/* Definitions for ProducerThread */
+/* USER CODE BEGIN PV */
+
+#if defined ( __CC_ARM ) || defined(__ARMCC_VERSION)
+
+extern uint32_t Image$$ER_IROM_FREERTOS_SYSTEM_CALLS$$Base;
+extern uint32_t Image$$ER_IROM_FREERTOS_SYSTEM_CALLS$$Limit;
+
+extern uint32_t Image$$ER_IROM_UNPRIVILEGED$$Base;
+extern uint32_t Image$$ER_IROM_UNPRIVILEGED$$Limit;
+
+/* Memory map needed for MPU setup. Must match the one defined in
+ * the scatter-loading file (Project.sct). */
+const uint32_t * __FLASH_segment_start__ = ( uint32_t * ) 0x08000000UL;
+const uint32_t * __FLASH_segment_end__ = ( uint32_t * ) 0x081FFFFFUL;
+const uint32_t * __SRAM_segment_start__ = ( uint32_t * ) 0x20000000UL;
+const uint32_t * __SRAM_segment_end__ = ( uint32_t * ) 0x2001FFFFUL;
+
+const uint32_t * __privileged_functions_start__ = ( uint32_t * ) 0x08000000UL;
+const uint32_t * __privileged_functions_end__ = ( uint32_t * ) 0x08007FFFUL;
+const uint32_t * __privileged_data_start__ = ( uint32_t * ) 0x20000000UL;
+const uint32_t * __privileged_data_end__ = ( uint32_t * ) 0x20007FFFUL;
+
+const uint32_t * __unprivileged_flash_start__ = ( uint32_t * ) &( Image$$ER_IROM_UNPRIVILEGED$$Base );
+const uint32_t * __unprivileged_flash_end__ = ( uint32_t * ) &( Image$$ER_IROM_UNPRIVILEGED$$Limit );
+
+const uint32_t * __syscalls_flash_start__ = ( uint32_t * ) &( Image$$ER_IROM_FREERTOS_SYSTEM_CALLS$$Base );
+const uint32_t * __syscalls_flash_end__ = ( uint32_t * ) &( Image$$ER_IROM_FREERTOS_SYSTEM_CALLS$$Limit );
 #endif
 
-/* Data used by the 'Check' task. ---------------------------*/
+/* A queue to hold fault information */
+static QueueHandle_t fault_queue;
 
-/* Define the constants used to allocate the check task stack.  Note that the
-stack size is defined in words, not bytes. */
-#define CHECK_TASK_STACK_SIZE_WORDS	256
-#define CHECK_TASK_STACK_ALIGNMENT ( CHECK_TASK_STACK_SIZE_WORDS * sizeof( portSTACK_TYPE ) )
+/* Define an array to track fault count */
+static uint8_t fault_count[NUMBER_OF_TASKS];
 
-/* Declare the stack that will be used by the check task.  The kernel will
- automatically create an MPU region for the stack.  The stack alignment must
- match its size, so if 128 words are reserved for the stack then it must be
- aligned to ( 128 * 4 ) bytes. */
-#if defined(__ICCARM__)
-#pragma data_alignment= CHECK_TASK_STACK_ALIGNMENT
-#endif
-static portSTACK_TYPE xCheckTaskStack[ CHECK_TASK_STACK_SIZE_WORDS ]  mainALIGN_TO( CHECK_TASK_STACK_ALIGNMENT );
+/* Define stack spaces for unprivileged tasks.
+ * These must meet MPU alignment and size requirements. */
+static StackType_t Task1Stack[ configMINIMAL_STACK_SIZE ] __attribute__( ( aligned( configMINIMAL_STACK_SIZE * sizeof( StackType_t ) ) ) );
+static StackType_t Task2Stack[ configMINIMAL_STACK_SIZE ] __attribute__( ( aligned( configMINIMAL_STACK_SIZE * sizeof( StackType_t ) ) ) );
 
-/* Declare three arrays - an MPU region will be created for each array
-using the TaskParameters_t structure below.  THIS IS JUST TO DEMONSTRATE THE
-MPU FUNCTIONALITY, the data is not used by the check tasks primary function.
+/* Define shared memory */
+static uint8_t sharedMemory[ EXAMPLE_SHARED_MEMORY_SIZE ] __attribute__( ( aligned( EXAMPLE_SHARED_MEMORY_SIZE ) ) );
 
-Note that the arrays allocate slightly more RAM than is actually assigned to
-the MPU region.  This is to permit writes off the end of the array to be
-detected even when the arrays are placed in adjacent memory locations (with no
-gaps between them).  The align size must be a power of two. */
-#define READ_WRITE_ARRAY_SIZE 130
-#define READ_WRITE_ALIGN_SIZE 128
+static void Task1(void *argument);
+static void Task2(void *argument);
 
-#if defined(__ICCARM__)
-#pragma data_alignment= READ_WRITE_ALIGN_SIZE 
-#endif
-char ReadWriteArray[ READ_WRITE_ARRAY_SIZE ] mainALIGN_TO( READ_WRITE_ALIGN_SIZE );
+static TaskHandle_t MainTaskHandle;
+static TaskHandle_t TaskHandles[NUMBER_OF_TASKS];
 
-#define READ_ONLY_ARRAY_SIZE 260
-#define READ_ONLY_ALIGN_SIZE 256
-
-#if defined(__ICCARM__)
-#pragma data_alignment= READ_ONLY_ALIGN_SIZE
-#endif
-char ReadOnlyArray[ READ_ONLY_ARRAY_SIZE ] mainALIGN_TO( READ_ONLY_ALIGN_SIZE );
-
-#define PRIVILEGED_ONLY_ACCESS_ARRAY_SIZE 130
-#define PRIVILEGED_ONLY_ACCESS_ALIGN_SIZE 128
-
-#if defined(__ICCARM__)
-#pragma data_alignment= PRIVILEGED_ONLY_ACCESS_ALIGN_SIZE
-#endif
-char PrivilegedOnlyAccessArray[ PRIVILEGED_ONLY_ACCESS_ALIGN_SIZE ] mainALIGN_TO( PRIVILEGED_ONLY_ACCESS_ALIGN_SIZE );
-
-/* Fill in a TaskParameters_t structure to define the check task - this is the
-structure passed to the xTaskCreateRestricted() function. */
-static const TaskParameters_t xCheckTaskParameters =
+/* Task parameters for unprivileged tasks */
+static const TaskParameters_t TaskParameters[NUMBER_OF_TASKS] =
 {
-  CheckTask,
-  "CheckTask",
-  CHECK_TASK_STACK_SIZE_WORDS,
-  ( void * ) 0x12121212,
-  ( tskIDLE_PRIORITY + 1 ) | portPRIVILEGE_BIT,
-  xCheckTaskStack,
   {
-    /* Base address			Length			                Parameters */
-    { ReadWriteArray,			READ_WRITE_ALIGN_SIZE,		portMPU_REGION_READ_WRITE },
-    { ReadOnlyArray,			READ_ONLY_ALIGN_SIZE,		portMPU_REGION_READ_ONLY },
-    { PrivilegedOnlyAccessArray,	PRIVILEGED_ONLY_ACCESS_ALIGN_SIZE,	portMPU_REGION_PRIVILEGED_READ_WRITE }
+      .pvTaskCode     = Task1,
+      .pcName         = "Task1",
+      .usStackDepth   = configMINIMAL_STACK_SIZE,
+      .pvParameters   = NULL,
+      .uxPriority     = tskIDLE_PRIORITY,
+      .puxStackBuffer = Task1Stack,
+      .xRegions       =   {
+                              { sharedMemory,        EXAMPLE_SHARED_MEMORY_SIZE, portMPU_REGION_PRIVILEGED_READ_WRITE_UNPRIV_READ_ONLY | portMPU_REGION_EXECUTE_NEVER },
+                              { LED_GREEN_GPIO_Port, EXAMPLE_SHARED_MEMORY_SIZE, portMPU_REGION_READ_WRITE | portMPU_REGION_EXECUTE_NEVER },
+
+                              { 0 ,  0,  0 },
+                          }
+  },
+  {
+      .pvTaskCode     = Task2,
+      .pcName         = "Task2",
+      .usStackDepth   = configMINIMAL_STACK_SIZE,
+      .pvParameters   = NULL,
+      .uxPriority     = tskIDLE_PRIORITY,
+      .puxStackBuffer = Task2Stack,
+      .xRegions       =   {
+                              { sharedMemory,       EXAMPLE_SHARED_MEMORY_SIZE, portMPU_REGION_PRIVILEGED_READ_WRITE_UNPRIV_READ_ONLY | portMPU_REGION_EXECUTE_NEVER },
+                              { LED_BLUE_GPIO_Port, EXAMPLE_SHARED_MEMORY_SIZE, portMPU_REGION_READ_WRITE | portMPU_REGION_EXECUTE_NEVER },
+
+                              { 0 ,  0,  0 },
+                          }
   }
 };
+/* USER CODE END PV */
 
-/* Data used by the 'test' tasks. -----------------------*/
+/* Private function prototypes -----------------------------------------------*/
+static void MX_GPIO_Init(void);
+static void MX_USART3_UART_Init(void);
+static void MainTask(void *argument);
+/* USER CODE BEGIN PFP */
 
-/* Define the constants used to allocate the test task stacks.  Note that
-that stack size is defined in words, not bytes. */
-#define TEST_STACK_SIZE_WORDS	128
-#define TEST_STACK_ALIGNMENT	( TEST_STACK_SIZE_WORDS * sizeof( portSTACK_TYPE ) )
+/* USER CODE END PFP */
 
-/* Declare the stacks that will be used by the test tasks.  The kernel will
-automatically create an MPU region for the stack.  The stack alignment must
-match its size, so if 128 words are reserved for the stack then it must be
-aligned to ( 128 * 4 ) bytes. */
+/* Private user code ---------------------------------------------------------*/
+/* USER CODE BEGIN 0 */
 #if defined(__ICCARM__)
-#pragma data_alignment= TEST_STACK_ALIGNMENT
-#endif
-static portSTACK_TYPE xTest1Stack[ TEST_STACK_SIZE_WORDS ] mainALIGN_TO( TEST_STACK_ALIGNMENT );
-#if defined(__ICCARM__)
-#pragma data_alignment= TEST_STACK_ALIGNMENT
-#endif
-static portSTACK_TYPE xTest2Stack[ TEST_STACK_SIZE_WORDS ] mainALIGN_TO( TEST_STACK_ALIGNMENT );
-
-/* Fill in a TaskParameters_t structure per test task to define the tasks. */
-static const TaskParameters_t xTest1Parameters =
-{
-  Test1Task,
-  "Test1Task",
-  TEST_STACK_SIZE_WORDS,
-  ( void * ) TEST_TASK_1_PARAMETER,
-  tskIDLE_PRIORITY | portPRIVILEGE_BIT,
-  xTest1Stack,
-  {
-    /* Base address		Length		Parameters */
-    { 0x00,				0x00,			0x00 },
-    { 0x00,				0x00,			0x00 },
-    { 0x00,				0x00,			0x00 }
-  }
-};
-
-
-static TaskParameters_t xTest2Parameters =
-{
-  Test2Task,
-  "Test2Task",
-  TEST_STACK_SIZE_WORDS,
-  ( void * ) NULL,
-  tskIDLE_PRIORITY,
-  xTest2Stack,
-  {
-    /* Base address		Length		Parameters */
-    { 0x00,				0x00,			0x00 },
-    { 0x00,				0x00,			0x00 },
-    { 0x00,				0x00,			0x00 }
-  }
-};
-
-/* Private functions ---------------------------------------------------------*/
-int main( void )
-{
-  /* Enable the CPU Cache */
-  CPU_CACHE_Enable(); 
-  
-  /* STM32H7xx HAL library initialization:
-       - TIM6 timer is configured by default as source of HAL time base, but user
-         can eventually implement his proper time base source (another general purpose
-         timer for application or other time source), keeping in mind that Time base
-         duration should be kept 1ms since PPP_TIMEOUT_VALUEs are defined and
-         handled in milliseconds basis.
-         This application uses FreeRTOS, the RTOS initializes the systick to generate an interrupt each 1ms. 
-         The systick is then used for FreeRTOS time base.  
-       - Set NVIC Group Priority to 4
-       - Low Level Initialization: global MSP (MCU Support Package) initialization
-   */
-  HAL_Init();
-  
-  /* Configure the system clock to 400 MHz */
-  SystemClock_Config();	
-  
-  /* Create the queue used to pass "I'm alive" messages to the check task. */
-  xGlobalScopeCheckQueue = xQueueCreate( 1, sizeof( uint32_t ) );
-  
-  /* One check task uses the task parameter to receive the queue handle.
-  This allows the file scope variable to be accessed from within the task.
-  The pvParameters member of xTest2Parameters can only be set after the
-  queue has been created so is set here. */
-  xTest2Parameters.pvParameters = xGlobalScopeCheckQueue;
-  
-  /* Create three test tasks.  Handles to the created tasks are not required,
-  hence the second parameter is NULL. */
-  xTaskCreateRestricted( &xTest1Parameters, NULL );
-  xTaskCreateRestricted( &xTest2Parameters, NULL );
-  xTaskCreateRestricted( &xCheckTaskParameters, NULL );
-  
-  /* Create the tasks that are created using the original xTaskCreate() API function. */
-  xTaskCreate( UserModeTask, "Task1", 100,	NULL, 3, NULL );  
-  xTaskCreate( PrivilegedModeTask, "Task2", 100, NULL,( 3 | portPRIVILEGE_BIT ), NULL );
-  
-  /* Start the scheduler. */
-  vTaskStartScheduler();
-  
-  /* Will only get here if there was insufficient memory to create the idle
-  task. */
-  for( ;; );
-}
-/*-----------------------------------------------------------*/
-
-static void CheckTask( void *pvParameters )
-{
-  /* This task is created in privileged mode so can access the file scope
-  queue variable.  Take a stack copy of this before the task is set into user
-  mode.  Once that task is in user mode the file scope queue variable will no
-  longer be accessible but the stack copy will. */
-  QueueHandle_t xQueue = xGlobalScopeCheckQueue;
-  int32_t lMessage;
-  
-  /* Just to remove compiler warning. */
-  ( void ) pvParameters;
-  
-  /* Demonstrate how the various memory regions can and can't be accessed.
-  The task privilege level is set down to user mode within this function. */
-  TestMemoryRegions();
-  
-  ReadWriteArray[0] = 0;
-  ReadWriteArray[1] = 0;
-  ReadWriteArray[2] = 0;
-  
-  /* This loop performs the main function of the task, which is blocking
-  on a message queue then processing each message as it arrives. */
-  for( ;; )
-  {
-    /* Wait for the next message to arrive. */
-    xQueueReceive( xQueue, &lMessage, portMAX_DELAY );
-    
-    switch( lMessage )
-    {
-    case TEST_1_STILL_EXECUTING	:
-      (ReadWriteArray[0])++;
-      break;
-    case TEST_2_STILL_EXECUTING:
-      (ReadWriteArray[1])++;
-      break;
-    case CYCLE_RESET:
-      /* Message from tick hook, to reset the count cycle.  
-	  If messages have stopped arriving from either of
-      the two test task then the status must be set to fail. */
-      if( ( ReadWriteArray[ 0 ] == 0 ) || ( ReadWriteArray[ 1 ] == 0 ) )
-      {
-	    	/* One or both of the test tasks are no longer sending
-        'still alive' messages. */
-        for(;;);
-      }
-      else
-      {
-        /* Reset the count of 'still alive' messages. */
-        ReadWriteArray[0] = 0;
-        ReadWriteArray[1] = 0;
-
-        /* Increment The cycle count  */
-        (ReadWriteArray[2])++;
-      }
-
-      break;
-      
-    default :
-      /* Something unexpected happened.  Delete this task so the
-      error is apparent (no output will be displayed). */
-      vTaskDelete( NULL );
-      break;
-    }
-  }
-}
-/*-----------------------------------------------------------*/
-
-static void TestMemoryRegions( void )
-{
-  int32_t x;
-  char cTemp;
-  
-  /* The check task (from which this function is called) is created in the
-  Privileged mode.  The privileged array can be both read from and written
-  to while this task is privileged. */
-  PrivilegedOnlyAccessArray[ 0 ] = 'a';
-  if( PrivilegedOnlyAccessArray[ 0 ] != 'a' )
-  {
-    /* Something unexpected happened.  Delete this task so the error is
-    apparent (no output will be displayed). */
-    vTaskDelete( NULL );
-  }
-  
-  /* Writing off the end of the RAM allocated to this task will *NOT* cause a
-  protection fault because the task is still executing in a privileged mode.
-  Uncomment the following to test. */
-  /*PrivilegedOnlyAccessArray[ PRIVILEGED_ONLY_ACCESS_ALIGN_SIZE ] = 'a';*/
-  
-  /* Now set the task into user mode. */
-  portSWITCH_TO_USER_MODE();
-  
-  /* Accessing the privileged only array will now cause a fault.  Uncomment
-  the following line to test. */
-  /*PrivilegedOnlyAccessArray[ 0 ] = 'a';*/
-  
-  /* The read/write array can still be successfully read and written. */
-  for( x = 0; x < READ_WRITE_ALIGN_SIZE; x++ )
-  {
-    ReadWriteArray[ x ] = 'a';
-    if( ReadWriteArray[ x ] != 'a' )
-    {
-      /* Something unexpected happened.  Delete this task so the error is
-      apparent (no output will be displayed). */
-      vTaskDelete( NULL );
-    }
-  }
-  
-  /* But attempting to read or write off the end of the RAM allocated to this
-  task will cause a fault.  Uncomment either of the following two lines to
-  test. */
-  /* ReadWriteArray[ 0 ] = cReadWriteArray[ -1 ]; */
-  /* ReadWriteArray[ READ_WRITE_ALIGN_SIZE ] = 0x00; */
-  
-  /* The read only array can be successfully read... */
-  for( x = 0; x < READ_ONLY_ALIGN_SIZE; x++ )
-  {
-    cTemp = ReadOnlyArray[ x ];
-  }
-  
-  /* ...but cannot be written.  Uncomment the following line to test. */
-  /* ReadOnlyArray[ 0 ] = 'a'; */
-  
-  /* Writing to the first and last locations in the stack array should not
-  cause a protection fault.  Note that doing this will cause the kernel to
-  detect a stack overflow if configCHECK_FOR_STACK_OVERFLOW is greater than
-  1, hence the test is commented out by default. */
-  /* xCheckTaskStack[ 0 ] = 0;
-  xCheckTaskStack[ CHECK_TASK_STACK_SIZE_WORDS - 1 ] = 0; */
-  
-  /* Writing off either end of the stack array should cause a protection
-  fault, uncomment either of the following two lines to test. */
-  /* xCheckTaskStack[ -1 ] = 0; */
-  /* xCheckTaskStack[ CHECK_TASK_STACK_SIZE_WORDS ] = 0; */
-  
-  ( void ) cTemp;
-}
-
-/*-----------------------------------------------------------*/
-
-static void UserModeTask( void *pvParameters )
-{
-  /*const volatile uint32_t *pulStandardPeripheralRegister = ( volatile uint32_t * ) 0x40000000;*/
-  volatile const uint32_t *pul;
-  volatile uint32_t ulReadData;
-  
-  /* The following lines are commented out to prevent the unused variable
-  compiler warnings when the tests that use the variable are also commented out. */
-  /*extern uint32_t __privileged_functions_start; */
-  /*const volatile uint32_t *pulSystemPeripheralRegister = ( volatile uint32_t * ) 0xe000e014; */
-  
-  ( void ) pvParameters;
-  
-  /* This task is created in User mode using the original xTaskCreate() API
-  function.  It should have access to all Flash and RAM except that marked
-  as Privileged access only.  Reading from the start and end of the non-
-  privileged RAM should not cause a problem (the privileged RAM is the first
-  block at the bottom of the RAM memory). */
-  pul = __privileged_data_end__ + 1;
-  ulReadData = *pul;
-  pul = __SRAM_segment_end__ - 1;
-  ulReadData = *pul;
-  
-  /* Likewise reading from the start and end of the non-privileged Flash
-  should not be a problem (the privileged Flash is the first block at the
-  bottom of the Flash memory). */
-  pul = __privileged_functions_end__ + 1;
-  ulReadData = *pul;
-  pul = __FLASH_segment_end__ - 1;
-  ulReadData = *pul;
-  
-  /* Standard peripherals are accessible. 
-  ulReadData = *pulStandardPeripheralRegister;*/
-  
-  /* System peripherals are not accessible.  Uncomment the following line
-  to test.  Also uncomment the declaration of pulSystemPeripheralRegister
-  at the top of this function.
-  ulReadData = *pulSystemPeripheralRegister; */
-  
-  /* Reading from anywhere inside the privileged Flash or RAM should cause a
-  fault.  This can be tested by uncommenting any of the following pairs of
-  lines.  Also uncomment the declaration of __privileged_functions_start__
-  at the top of this function. */
-  
-  /*pul = __privileged_functions_start__;
-  ulReadData = *pul;*/
-  
-  /*pul = __privileged_functions_end__ - 1;
-  ulReadData = *pul;*/
-  
-  /*pul = __privileged_data_start__;
-  ulReadData = *pul;*/
-  
-  /*pul = __privileged_data_end__ - 1;
-  ulReadData = *pul;*/
-  
-  /* Must not just run off the end of a task function, so delete this task.
-  Note that because this task was created using xTaskCreate() the stack was
-  allocated dynamically and I have not included any code to free it again. */
-  vTaskDelete( NULL );
-  
-  ( void ) ulReadData;
-}
-/*-----------------------------------------------------------*/
-
-static void PrivilegedModeTask( void *pvParameters )
-{
-  volatile const uint32_t *pul;
-  volatile uint32_t ulReadData;
-  const volatile uint32_t *pulSystemPeripheralRegister = ( volatile uint32_t * ) 0xe000e014; /* Systick */
-  const volatile uint32_t *pulStandardPeripheralRegister = ( volatile uint32_t * ) 0x40000000;
-  
-  ( void ) pvParameters;
-  
-  /* This task is created in Privileged mode using the original xTaskCreate()
-  API	function.  It should have access to all Flash and RAM including that
-  marked as Privileged access only.  So reading from the start and end of the
-  non-privileged RAM should not cause a problem (the privileged RAM is the
-  first block at the bottom of the RAM memory). */
-  pul = __privileged_data_end__ + 1;
-  ulReadData = *pul;
-  pul = __SRAM_segment_end__ - 1;
-  ulReadData = *pul;
-  
-  /* Likewise reading from the start and end of the non-privileged Flash
-  should not be a problem (the privileged Flash is the first block at the
-  bottom of the Flash memory). */
-  pul = __privileged_functions_end__ + 1;
-  ulReadData = *pul;
-  pul = __FLASH_segment_end__ - 1;
-  ulReadData = *pul;
-  
-  /* Reading from anywhere inside the privileged Flash or RAM should also
-  not be a problem. */
-  pul = __privileged_functions_start__;
-  ulReadData = *pul;
-  pul = __privileged_functions_end__ - 1;
-  ulReadData = *pul;
-  pul = __privileged_data_start__;
-  ulReadData = *pul;
-  pul = __privileged_data_end__ - 1;
-  ulReadData = *pul;
-  
-  /* Finally, accessing both System and normal peripherals should both be
-  possible. */
-  ulReadData = *pulSystemPeripheralRegister;
-  ulReadData = *pulStandardPeripheralRegister;
-  
-  /* Must not just run off the end of a task function, so delete this task.
-  Note that because this task was created using xTaskCreate() the stack was
-  allocated dynamically and I have not included any code to free it again. */
-  vTaskDelete( NULL );
-  
-  ( void ) ulReadData;
-}
-
-/*-----------------------------------------------------------*/
-
-static void SendImAlive( QueueHandle_t xHandle, uint32_t ulTaskNumber )
-{
-  if( xHandle != NULL )
-  {
-    xQueueSend( xHandle, &ulTaskNumber, 0 );
-  }
-}
-
-/*-----------------------------------------------------------*/
-
-void vApplicationIdleHook( void )
-{
-  volatile const uint32_t *pul;
-  volatile uint32_t ulReadData;
-  
-  /* The idle task, and therefore this function, run in Supervisor mode and
-  can therefore access all memory.  Try reading from corners of flash and
-  RAM to ensure a memory fault does not occur.
-  
-  Start with the edges of the privileged data area. */
-  pul = __privileged_data_start__;
-  ulReadData = *pul;
-  pul = __privileged_data_end__ - 1;
-  ulReadData = *pul;
-  
-  /* Next the standard SRAM area. */
-  pul = __SRAM_segment_end__ - 1;
-  ulReadData = *pul;
-  
-  /* And the standard Flash area - the start of which is marked for
-  privileged access only. */
-  pul = __FLASH_segment_start__;
-  ulReadData = *pul;
-  pul = __FLASH_segment_end__ - 1;
-  ulReadData = *pul;
-  
-  /* Reading off the end of Flash or SRAM space should cause a fault.
-  Uncomment one of the following two pairs of lines to test. */
-  
-  /* pul = __FLASH_segment_end__ + 4;
-  ulReadData = *pul; */
-  
-  /* pul = __SRAM_segment_end__ + 1;
-  ulReadData = *pul; */
-  
-  ( void ) ulReadData;
-}
-/*-----------------------------------------------------------*/
-
-void vApplicationTickHook( void )
-{
-  static uint32_t ulCallCount = 0;
-  const uint32_t ulCallsBetweenSends = pdMS_TO_TICKS( 5000 );
-  const uint32_t ulMessage = CYCLE_RESET;
-  portBASE_TYPE xDummy;
-  
-  /* If configUSE_TICK_HOOK is set to 1 then this function will get called
-  from each RTOS tick.  It is called from the tick interrupt and therefore
-  will be executing in the privileged state. */
-  
-  ulCallCount++;
-  
-  /* Is it time to print out the pass/fail message again? */
-  if( ulCallCount >= ulCallsBetweenSends )
-  {
-    ulCallCount = 0;
-    
-    /* Send a message to the check task to command it to check that all
-    the tasks are still running then print out the status.
-    
-    This is running in an ISR so has to use the "FromISR" version of
-    xQueueSend().  Because it is in an ISR it is running with privileges
-    so can access xGlobalScopeCheckQueue directly. */
-    xQueueSendFromISR( xGlobalScopeCheckQueue, &ulMessage, &xDummy );
-  }
-}
-
-/*-----------------------------------------------------------*/
-
-static void Test1Task( void *pvParameters )
-{
-  /* This task is created in privileged mode so can access the file scope
-  queue variable.  Take a stack copy of this before the task is set into user
-  mode.  Once this task is in user mode the file scope queue variable will no
-  longer be accessible but the stack copy will. */
-  QueueHandle_t xQueue = xGlobalScopeCheckQueue;
-  const TickType_t xDelayTime = pdMS_TO_TICKS( 100UL );
-  
-  /* Now the queue handle has been obtained the task can switch to user
-  mode.  This is just one method of passing a handle into a protected
-  task, the other	reg test task uses the task parameter instead. */
-  portSWITCH_TO_USER_MODE();
-  
-  /* First check that the parameter value is as expected. */
-  if( pvParameters != ( void * ) TEST_TASK_1_PARAMETER )
-  {
-    /* Error detected.  Delete the task so it stops communicating with
-    the check task. */
-    vTaskDelete(NULL);
-  }
-  
-  for( ;; )
-  {
-    /* Send TEST_1_STILL_EXECUTING to the check task to indicate that this
-    task is still functioning. */
-    SendImAlive( xQueue, TEST_1_STILL_EXECUTING );
-    vTaskDelay( xDelayTime );
-  }
-}
-/*-----------------------------------------------------------*/
-
-static void Test2Task( void *pvParameters )
-{
-  /* The queue handle is passed in as the task parameter.  This is one method of
-  passing data into a protected task, the other reg test task uses a different
-  method. */
-  QueueHandle_t xQueue = ( QueueHandle_t ) pvParameters;
-  const TickType_t xDelayTime = pdMS_TO_TICKS( 100UL );
-  
-  for( ;; )
-  {
-    
-    /* Send TEST_2_STILL_EXECUTING to the check task to indicate
-    that this task is still functioning. */
-    SendImAlive( xQueue, TEST_2_STILL_EXECUTING );
-    vTaskDelay( xDelayTime );
-  }
-}
-
-#if configCHECK_FOR_STACK_OVERFLOW
-void vApplicationStackOverflowHook( TaskHandle_t pxTask, char *pcTaskName )
-{  
-  /* If configCHECK_FOR_STACK_OVERFLOW is set to either 1 or 2 then this
-  function will automatically get called if a task overflows its stack. */
-  ( void ) pxTask;
-  ( void ) pcTaskName;
-  for( ;; );
-}
-#endif
+/* New definition from EWARM V9, compatible with EWARM8 */
+int iar_fputc(int ch);
+#define PUTCHAR_PROTOTYPE int iar_fputc(int ch)
+#elif defined ( __CC_ARM ) || defined(__ARMCC_VERSION)
+/* ARM Compiler 5/6*/
+#define PUTCHAR_PROTOTYPE int fputc(int ch, FILE *f)
+#elif defined(__GNUC__)
+#define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
+#endif /* __ICCARM__ */
+/* USER CODE END 0 */
 
 /**
-  * @brief  System Clock Configuration
-  *         The system Clock is configured as follow : 
-  *            System Clock source            = PLL (HSE BYPASS)
-  *            SYSCLK(Hz)                     = 400000000 (CPU Clock)
-  *            HCLK(Hz)                       = 200000000 (AXI and AHBs Clock)
-  *            AHB Prescaler                  = 2
-  *            D1 APB3 Prescaler              = 2 (APB3 Clock  100MHz)
-  *            D2 APB1 Prescaler              = 2 (APB1 Clock  100MHz)
-  *            D2 APB2 Prescaler              = 2 (APB2 Clock  100MHz)
-  *            D3 APB4 Prescaler              = 2 (APB4 Clock  100MHz)
-  *            HSE Frequency(Hz)              = 8000000
-  *            PLL_M                          = 4
-  *            PLL_N                          = 400
-  *            PLL_P                          = 2
-  *            PLL_Q                          = 4
-  *            PLL_R                          = 2
-  *            VDD(V)                         = 3.3
-  *            Flash Latency(WS)              = 4
+  * @brief  The application entry point.
+  * @retval int
+  */
+int main(void)
+{
+
+  /* USER CODE BEGIN 1 */
+
+  /* USER CODE END 1 */
+
+  /* Enable I-Cache---------------------------------------------------------*/
+  SCB_EnableICache();
+
+  /* Enable D-Cache---------------------------------------------------------*/
+  SCB_EnableDCache();
+
+  /* MCU Configuration--------------------------------------------------------*/
+
+  /* Update SystemCoreClock variable according to RCC registers values. */
+  SystemCoreClockUpdate();
+
+  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+  HAL_Init();
+
+  /* USER CODE BEGIN Init */
+
+  /* USER CODE END Init */
+
+  /* USER CODE BEGIN SysInit */
+
+  /* USER CODE END SysInit */
+
+  /* Initialize all configured peripherals */
+  MX_GPIO_Init();
+  MX_USART3_UART_Init();
+  /* USER CODE BEGIN 2 */
+  printf("FreeRTOS MPU Application\r\n");
+  /* USER CODE END 2 */
+
+  /* Init scheduler */
+  osKernelInitialize();
+
+  /* USER CODE BEGIN RTOS_MUTEX */
+  /* add mutexes, ... */
+  /* USER CODE END RTOS_MUTEX */
+
+  /* USER CODE BEGIN RTOS_SEMAPHORES */
+  /* add semaphores, ... */
+  /* USER CODE END RTOS_SEMAPHORES */
+
+  /* USER CODE BEGIN RTOS_TIMERS */
+  /* start timers, add new ones, ... */
+  /* USER CODE END RTOS_TIMERS */
+
+  /* USER CODE BEGIN RTOS_QUEUES */
+  fault_queue = xQueueCreate(5U, sizeof(FaultInfo_t));
+  if(fault_queue == NULL)
+  {
+     Error_Handler();
+  }
+  /* USER CODE END RTOS_QUEUES */
+
+  /* Create the thread(s) */
+
+  /* USER CODE BEGIN RTOS_THREADS */
+  if(xTaskCreate(MainTask, "MainTask", configMINIMAL_STACK_SIZE, NULL,
+                 (configMAX_PRIORITIES -1) |portPRIVILEGE_BIT  ,
+                 &MainTaskHandle) != pdPASS)
+  {
+     Error_Handler();
+  }
+
+  /* Create unprivileged threads */
+  if(xTaskCreateRestricted(&TaskParameters[0], &TaskHandles[0] )!= pdPASS)
+  {
+   Error_Handler();
+  }
+  if(xTaskCreateRestricted(&TaskParameters[1], &TaskHandles[1] )!= pdPASS)
+  {
+   Error_Handler();
+  }
+  /* USER CODE END RTOS_THREADS */
+
+  /* USER CODE BEGIN RTOS_EVENTS */
+  /* add events, ... */
+  /* USER CODE END RTOS_EVENTS */
+
+  /* Start scheduler */
+  osKernelStart();
+  /* We should never get here as control is now taken by the scheduler */
+
+  /* Infinite loop */
+  /* USER CODE BEGIN WHILE */
+  while (1)
+  {
+    /* USER CODE END WHILE */
+
+    /* USER CODE BEGIN 3 */
+  }
+  /* USER CODE END 3 */
+}
+
+/**
+  * @brief USART3 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_USART3_UART_Init(void)
+{
+
+  /* USER CODE BEGIN USART3_Init 0 */
+
+  /* USER CODE END USART3_Init 0 */
+
+  /* USER CODE BEGIN USART3_Init 1 */
+
+  /* USER CODE END USART3_Init 1 */
+  huart3.Instance = USART3;
+  huart3.Init.BaudRate = 115200;
+  huart3.Init.WordLength = UART_WORDLENGTH_8B;
+  huart3.Init.StopBits = UART_STOPBITS_1;
+  huart3.Init.Parity = UART_PARITY_NONE;
+  huart3.Init.Mode = UART_MODE_TX_RX;
+  huart3.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart3.Init.OverSampling = UART_OVERSAMPLING_16;
+  huart3.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+  huart3.Init.ClockPrescaler = UART_PRESCALER_DIV1;
+  huart3.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  if (HAL_UART_Init(&huart3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_UARTEx_SetTxFifoThreshold(&huart3, UART_TXFIFO_THRESHOLD_1_8) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_UARTEx_SetRxFifoThreshold(&huart3, UART_RXFIFO_THRESHOLD_1_8) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_UARTEx_DisableFifoMode(&huart3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART3_Init 2 */
+
+  /* USER CODE END USART3_Init 2 */
+
+}
+
+/**
+  * @brief GPIO Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_GPIO_Init(void)
+{
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
+/* USER CODE BEGIN MX_GPIO_Init_1 */
+/* USER CODE END MX_GPIO_Init_1 */
+
+  /* GPIO Ports Clock Enable */
+  __HAL_RCC_GPIOB_CLK_ENABLE();
+  __HAL_RCC_GPIOD_CLK_ENABLE();
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOB, LED_BLUE_Pin|LED_GREEN_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pins : LED_BLUE_Pin LED_GREEN_Pin */
+  GPIO_InitStruct.Pin = LED_BLUE_Pin|LED_GREEN_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+/* USER CODE BEGIN MX_GPIO_Init_2 */
+/* USER CODE END MX_GPIO_Init_2 */
+}
+
+/* USER CODE BEGIN 4 */
+#if defined(__ICCARM__)
+size_t __write(int file, unsigned char const *ptr, size_t len)
+{
+  size_t idx;
+  unsigned char const *pdata = ptr;
+
+  for (idx = 0; idx < len; idx++)
+  {
+    iar_fputc((int)*pdata);
+    pdata++;
+  }
+  return len;
+}
+#endif /* __ICCARM__ */
+
+/**
+  * @brief  Retargets the C library printf function to the USART.
   * @param  None
   * @retval None
   */
-static void SystemClock_Config(void)
+PUTCHAR_PROTOTYPE
 {
-  RCC_ClkInitTypeDef RCC_ClkInitStruct;
-  RCC_OscInitTypeDef RCC_OscInitStruct;
-  HAL_StatusTypeDef ret = HAL_OK;
+  /* Place your implementation of fputc here */
+  /* e.g. write a character to the USART3 and Loop until the end of transmission */
+  HAL_UART_Transmit(&huart3, (uint8_t *)&ch, 1, 0xFFFF);
 
-  /* The voltage scaling allows optimizing the power consumption when the device is
-     clocked below the maximum system frequency, to update the voltage scaling value
-     regarding system frequency refer to product datasheet.  */
-  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
-
-  while(!__HAL_PWR_GET_FLAG(PWR_FLAG_VOSRDY)) {}
-  
-  /* Enable HSE Oscillator and activate PLL with HSE as source */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
-  RCC_OscInitStruct.HSEState = RCC_HSE_BYPASS;
-  RCC_OscInitStruct.HSIState = RCC_HSI_OFF;
-  RCC_OscInitStruct.CSIState = RCC_CSI_OFF;
-  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-
-  RCC_OscInitStruct.PLL.PLLM = 4;
-  RCC_OscInitStruct.PLL.PLLN = 400;
-  RCC_OscInitStruct.PLL.PLLFRACN = 0;
-  RCC_OscInitStruct.PLL.PLLP = 2;
-  RCC_OscInitStruct.PLL.PLLR = 2;
-  RCC_OscInitStruct.PLL.PLLQ = 4;
-
-  RCC_OscInitStruct.PLL.PLLVCOSEL = RCC_PLL1VCOWIDE;
-  RCC_OscInitStruct.PLL.PLLRGE = RCC_PLL1VCIRANGE_1;
-  ret = HAL_RCC_OscConfig(&RCC_OscInitStruct);
-  if(ret != HAL_OK)
-  {
-    while(1);
-  }
-  
-/* Select PLL as system clock source and configure  bus clocks dividers */
-  RCC_ClkInitStruct.ClockType = (RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_D1PCLK1 | RCC_CLOCKTYPE_PCLK1 | \
-                                 RCC_CLOCKTYPE_PCLK2  | RCC_CLOCKTYPE_D3PCLK1);
-
-  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
-  RCC_ClkInitStruct.SYSCLKDivider = RCC_SYSCLK_DIV1;
-  RCC_ClkInitStruct.AHBCLKDivider = RCC_HCLK_DIV2;
-  RCC_ClkInitStruct.APB3CLKDivider = RCC_APB3_DIV2;  
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_APB1_DIV2; 
-  RCC_ClkInitStruct.APB2CLKDivider = RCC_APB2_DIV2; 
-  RCC_ClkInitStruct.APB4CLKDivider = RCC_APB4_DIV2; 
-  ret = HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_4);
-  if(ret != HAL_OK)
-  {
-    while(1);
-  }	
+  return ch;
 }
 
 /**
-* @brief  CPU L1-Cache enable.
-* @param  None
-* @retval None
-*/
-static void CPU_CACHE_Enable(void)
+  * @brief Function implementing the MainTask thread.
+  *        It is responsible for montitoring other threads.
+  * @param argument: Not used
+  * @retval None
+  */
+void MainTask(void *argument)
 {
-  /* Enable I-Cache */
-  SCB_EnableICache();
+  UNUSED(argument);
 
-  /* Enable D-Cache */
-  SCB_EnableDCache();
-} 
+  FaultInfo_t fault;
 
-#ifdef  USE_FULL_ASSERT
+  for(;;)
+  {
+    xQueueReceive(fault_queue, &fault, portMAX_DELAY);
 
+    printf("\tTask name: %s\n", pcTaskGetName((TaskHandle_t) fault.handle));
+
+    printf("------------------------------\n");
+
+    /* Handle MPU exceptions */
+    for(int i = 0; i < NUMBER_OF_TASKS; ++i)
+    {
+       /* Delete task if it has caused too many faults*/
+      if(fault_count[i] == EXAMPLE_FAULT_COUNT_THRESHOLD)
+      {
+        vTaskDelete((TaskHandle_t)fault.handle);
+
+        printf("%s has caused %d faults. It was deleted.\r\n",
+               pcTaskGetName(TaskHandles[i]),
+               EXAMPLE_FAULT_COUNT_THRESHOLD);
+      }
+    }
+  }
+}
+
+/**
+  * @brief Function implementing the Task1 thread.
+  * @param argument: Not used
+  * @retval None
+  */
+void Task1(void *argument)
+{
+  UNUSED(argument);
+
+  uint8_t isFirstTime = 1;
+
+  for(;;)
+  {
+    HAL_GPIO_TogglePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin);
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    if(isFirstTime)
+    {
+      isFirstTime = 0;
+
+      /* Try to perform an illegal write */
+      sharedMemory[EXAMPLE_SHARED_MEMORY_SIZE - 1] = 4U;
+    }
+  }
+}
+
+/**
+  * @brief Function implementing the Task2 thread.
+  * @param argument: Not used
+  * @retval None
+  */
+void Task2(void *argument)
+{
+  UNUSED(argument);
+
+  vTaskDelay(pdMS_TO_TICKS(1000));
+  for(;;)
+  {
+    HAL_GPIO_TogglePin(LED_BLUE_GPIO_Port, LED_BLUE_Pin);
+    vTaskDelay(pdMS_TO_TICKS(2000));
+
+    /* Try to perform an illegal write */
+    sharedMemory[EXAMPLE_SHARED_MEMORY_SIZE/2] = 4U;
+  }
+}
+
+/* We need to use the original FreeRTOS xTaskGetCurrentTaskHandle
+ * function instead of the one defined in mpu_wrapper.c */
+#undef xTaskGetCurrentTaskHandle
+TaskHandle_t xTaskGetCurrentTaskHandle( void );
+
+/**
+  * @brief MemManage fault recovery
+  * @retval None
+  */
+void MemManage_Recover(void)
+{
+
+  FaultInfo_t current_fault;
+  uint8_t nextInstructionOffset = 2U;
+  uint32_t* returnAddress;
+  uint16_t instruction;
+
+  /* Log the offending thread */
+  current_fault.address  = SCB->MMFAR;
+  current_fault.handle =  (uint32_t)xTaskGetCurrentTaskHandle();
+  current_fault.psp = (uint32_t)__get_PSP();
+
+  /*
+   * Clear DACCVIOL sticky bit in the MMFSR subregister.
+   * If not cleared, subsequent fault addresses will not be stored in
+   * the MMFAR register.*/
+  SET_BIT(SCB->CFSR,SCB_CFSR_DACCVIOL_Msk);
+
+  for(int i = 0; i < NUMBER_OF_TASKS; ++i)
+  {
+    if((TaskHandle_t)current_fault.handle == TaskHandles[i])
+    {
+       /* Increment fault count for task */
+       ++fault_count[i];
+
+       /* Display info about fault */
+       printf("MemManage fault occurred\r\n");
+       printf("\tAddress: 0x%X\r\n", (unsigned int) current_fault.address);
+       printf("\tCurrent Task Handle: %p\n", xTaskGetCurrentTaskHandle());
+
+       returnAddress = (uint32_t*)current_fault.psp + RETURN_ADDRESS_OFFSET;
+
+       /* Identify if the instruction which caused the issue
+        *is 16 or 32 bit wide */
+       instruction = *(uint16_t*)(*(uint32_t*)returnAddress);
+       if((instruction & INSTRUCTION_32BIT_Msk) == INSTRUCTION_32BIT_Msk)
+       {
+          nextInstructionOffset = 4U;
+       }
+       else
+       {
+          nextInstructionOffset = 2U;
+       }
+
+       /* Move to next instruction */
+       *returnAddress += nextInstructionOffset;
+
+       break;
+    }
+  }
+  /* Send Fault info to Main task */
+  xQueueSendToBackFromISR(fault_queue, &current_fault, NULL);
+
+  /* Current task yields. Set PENDSVSET bit to set the PendSV exception state
+   * to pending, this forces a context switch and guarantees that
+   * the Main thread will be able to take action if needed before the current
+   * thread continues.*/
+  portYIELD_WITHIN_API();
+}
+
+/* USER CODE END 4 */
+
+/**
+  * @brief  Period elapsed callback in non blocking mode
+  * @note   This function is called  when TIM6 interrupt took place, inside
+  * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
+  * a global variable "uwTick" used as application time base.
+  * @param  htim TIM handle
+  * @retval None
+  */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+  /* USER CODE BEGIN Callback 0 */
+
+  /* USER CODE END Callback 0 */
+  if (htim->Instance == TIM6) {
+    HAL_IncTick();
+  }
+  /* USER CODE BEGIN Callback 1 */
+
+  /* USER CODE END Callback 1 */
+}
+
+/**
+  * @brief  This function is executed in case of error occurrence.
+  * @retval None
+  */
+void Error_Handler(void)
+{
+  /* USER CODE BEGIN Error_Handler_Debug */
+  /* User can add his own implementation to report the HAL error return state */
+  printf("Critical Error occurred \r\n");
+  while (1)
+  {
+  }
+  /* USER CODE END Error_Handler_Debug */
+}
+
+#ifdef USE_FULL_ASSERT
 /**
   * @brief  Reports the name of the source file and the source line number
   *         where the assert_param error has occurred.
@@ -820,15 +583,13 @@ static void CPU_CACHE_Enable(void)
   */
 void assert_failed(uint8_t *file, uint32_t line)
 {
+  /* USER CODE BEGIN 6 */
   /* User can add his own implementation to report the file name and line number,
      ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
-
   /* Infinite loop */
   while (1)
   {
   }
+  /* USER CODE END 6 */
 }
-#endif
-
- 
-
+#endif /* USE_FULL_ASSERT */

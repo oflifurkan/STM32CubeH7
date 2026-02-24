@@ -216,6 +216,11 @@
 			<locationURI>PARENT-6-PROJECT_LOC/Middlewares/Third_Party/FreeRTOS/Source/croutine.c</locationURI>
 		</link>
 		<link>
+			<name>Middlewares/FreeRTOS/event_groups.c</name>
+			<type>1</type>
+			<locationURI>PARENT-6-PROJECT_LOC/Middlewares/Third_Party/FreeRTOS/Source/event_groups.c</locationURI>
+		</link>
+		<link>
 			<name>Middlewares/FreeRTOS/list.c</name>
 			<type>1</type>
 			<locationURI>PARENT-6-PROJECT_LOC/Middlewares/Third_Party/FreeRTOS/Source/list.c</locationURI>
@@ -224,6 +229,11 @@
 			<name>Middlewares/FreeRTOS/queue.c</name>
 			<type>1</type>
 			<locationURI>PARENT-6-PROJECT_LOC/Middlewares/Third_Party/FreeRTOS/Source/queue.c</locationURI>
+		</link>
+		<link>
+			<name>Middlewares/FreeRTOS/stream_buffer.c</name>
+			<type>1</type>
+			<locationURI>PARENT-6-PROJECT_LOC/Middlewares/Third_Party/FreeRTOS/Source/stream_buffer.c</locationURI>
 		</link>
 		<link>
 			<name>Middlewares/FreeRTOS/tasks.c</name>
@@ -311,14 +321,19 @@
 			<locationURI>PARENT-6-PROJECT_LOC/Drivers/BSP/STM32H743I-EVAL/stm32h743i_eval_sdram.c</locationURI>
 		</link>
 		<link>
-			<name>Middlewares/FreeRTOS/portable/cmsis_os.c</name>
+			<name>Middlewares/FreeRTOS/portable/cmsis_os2.c</name>
 			<type>1</type>
-			<locationURI>PARENT-6-PROJECT_LOC/Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/cmsis_os.c</locationURI>
+			<locationURI>PARENT-6-PROJECT_LOC/Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.c</locationURI>
 		</link>
 		<link>
 			<name>Middlewares/FreeRTOS/portable/heap_4.c</name>
 			<type>1</type>
 			<locationURI>PARENT-6-PROJECT_LOC/Middlewares/Third_Party/FreeRTOS/Source/portable/MemMang/heap_4.c</locationURI>
+		</link>
+		<link>
+			<name>Middlewares/FreeRTOS/portable/mpu_wrappers.c</name>
+			<type>1</type>
+			<locationURI>PARENT-6-PROJECT_LOC/Middlewares/Third_Party/FreeRTOS/Source/portable/Common/mpu_wrappers.c</locationURI>
 		</link>
 		<link>
 			<name>Middlewares/FreeRTOS/portable/port.c</name>
@@ -459,6 +474,11 @@
 			<name>Middlewares/LwIP/Netif/sys_arch.c</name>
 			<type>1</type>
 			<locationURI>PARENT-6-PROJECT_LOC/Middlewares/Third_Party/LwIP/system/OS/sys_arch.c</locationURI>
+		</link>
+		<link>
+			<name>Middlewares/LwIP/Core/IPv4/acd.c</name>
+			<type>1</type>
+			<locationURI>PARENT-6-PROJECT_LOC/Middlewares/Third_Party/LwIP/src/core/ipv4/acd.c</locationURI>
 		</link>
 		<link>
 			<name>Middlewares/LwIP/Core/IPv4/autoip.c</name>

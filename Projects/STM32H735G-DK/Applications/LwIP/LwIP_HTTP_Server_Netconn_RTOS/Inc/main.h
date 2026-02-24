@@ -27,7 +27,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "stm32h7xx_hal.h"
 #include "stm32h735g_discovery.h"
-
+#include "FreeRTOS.h"
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
 #define USE_LCD        /* enable LCD  */
@@ -52,13 +52,10 @@
 
 /* Exported macro ------------------------------------------------------------*/
 /* Exported functions ------------------------------------------------------- */
-
+void Error_Handler(void);
 
 #ifdef __cplusplus
 }
 #endif
 
 #endif /* __MAIN_H */
-
-
-

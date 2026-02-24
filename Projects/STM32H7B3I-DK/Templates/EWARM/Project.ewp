@@ -1063,6 +1063,15 @@
                     </file>
                 </group>
                 <group>
+                    <name>GT911</name>
+                    <file>
+                        <name>$PROJ_DIR$\..\..\..\..\Drivers\BSP\Components\gt911\gt911.c</name>
+                    </file>
+                    <file>
+                        <name>$PROJ_DIR$\..\..\..\..\Drivers\BSP\Components\gt911\gt911_reg.c</name>
+                    </file>
+                </group>
+                <group>
                     <name>IS42S16800J</name>
                     <file>
                         <name>$PROJ_DIR$\..\..\..\..\Drivers\BSP\Components\is42s16800j\is42s16800j.c</name>

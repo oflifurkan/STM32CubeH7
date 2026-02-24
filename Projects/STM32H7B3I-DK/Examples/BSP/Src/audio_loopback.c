@@ -110,13 +110,26 @@ void REC_SingleBuff_demo(void)
 {
   uint32_t channel_nbr = 2;
   uint32_t y_size, x_size;
+  int32_t probeStatus;
 
   ButtonState = 0;
   BSP_LCD_GetXSize(0, &x_size);
   BSP_LCD_GetYSize(0, &y_size);
   AudioLoopback_SetHint(0);
 
-  hTS.Orientation = TS_SWAP_XY;
+  probeStatus = GT911_Probe(TS_INSTANCE);
+  if (probeStatus == BSP_ERROR_NONE)
+  {
+    hTS.Orientation = TS_SWAP_NONE;
+  }
+  else
+  {
+    probeStatus = FT5336_Probe(TS_INSTANCE);
+    if (probeStatus == BSP_ERROR_NONE)
+    {
+      hTS.Orientation = TS_SWAP_XY;
+    }
+  }
   hTS.Accuracy = 0;
   hTS.Width = x_size;
   hTS.Height = y_size;
@@ -250,13 +263,26 @@ void REC_MultiBuff_demo(void)
 {
   uint32_t index;
   uint32_t y_size, x_size;
+  int32_t probeStatus;
 
   ButtonState = 0;
   BSP_LCD_GetXSize(0, &x_size);
   BSP_LCD_GetYSize(0, &y_size);
   AudioLoopback_SetHint(1);
 
-  hTS.Orientation = TS_SWAP_XY;
+  probeStatus = GT911_Probe(TS_INSTANCE);
+  if (probeStatus == BSP_ERROR_NONE)
+  {
+    hTS.Orientation = TS_SWAP_NONE;
+  }
+  else
+  {
+    probeStatus = FT5336_Probe(TS_INSTANCE);
+    if (probeStatus == BSP_ERROR_NONE)
+    {
+      hTS.Orientation = TS_SWAP_XY;
+    }
+  }
   hTS.Accuracy = 0;
   hTS.Width = x_size;
   hTS.Height = y_size;

@@ -20,7 +20,6 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "app_fatfs.h"
-#include "cmsis_os.h"
 #include "main.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -193,9 +192,9 @@ static int32_t FS_File1Operations(void)
     if(f_open(&File1, "STM32_1.TXT", FA_CREATE_ALWAYS | FA_WRITE) == FR_OK)
     {
       /* Allow Second task to have access to FatFs */
-      osMessageQueuePut(DiskEvent, &DiskReadyEvent, 100, osWaitForever);     
-      osDelay(100);	  
-	  /* Write data to the text file */
+      osMessageQueuePut(DiskEvent, &DiskReadyEvent, 100, osWaitForever);
+      osDelay(100);
+      /* Write data to the text file */
       res = f_write(&File1, wtext, sizeof(wtext), (void *)&byteswritten);
 
       if((byteswritten > 0) && (res == FR_OK))
@@ -208,9 +207,9 @@ static int32_t FS_File1Operations(void)
         osMessageQueuePut(DiskEvent, &DiskRemoveEvent, 100, 0);
         disk_op = 0;
         return 0;
-      }           
-	} 
- }
+      }
+    }
+  }
   /* Error */
   return -1;
 }
@@ -230,11 +229,11 @@ int32_t FS_File2Operations(void)
   {
     /* Write data to the text file */
     res = f_write(&File2, wtext, sizeof(wtext), (void *)&byteswritten);
-    
+
     if((byteswritten > 0) && (res == FR_OK))
     {
       /* Close the open text file */
-      f_close(&File2);           
+      f_close(&File2);
       disk_op ++;
       return 0;
     }

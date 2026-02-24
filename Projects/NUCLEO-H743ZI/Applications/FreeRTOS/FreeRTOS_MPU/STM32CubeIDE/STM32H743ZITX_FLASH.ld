@@ -48,12 +48,12 @@ _Min_Stack_Size = 0x400; /* required amount of stack */
 /* Specify the memory areas */
 MEMORY
 {
-FLASH (rx)      : ORIGIN = 0x08009000, LENGTH = 2012K
-Privileged_FLASH (rx)      : ORIGIN = 0x08000000, LENGTH = 32K
-System_calls_FLASH (rx)      : ORIGIN = 0x08008000, LENGTH = 4K
-RAM (xrw)      : ORIGIN = 0x20008000, LENGTH = 96K
-Privileged_RAM (xrw)      : ORIGIN = 0x20000000, LENGTH = 32K
-ITCMRAM (xrw)      : ORIGIN = 0x00000000, LENGTH = 64K
+  Privileged_FLASH (rx)      : ORIGIN = 0x08000000, LENGTH = 64K
+  System_calls_FLASH (rx)    : ORIGIN = 0x08010000, LENGTH = 8K
+  FLASH (rx)                 : ORIGIN = 0x08012000, LENGTH = 1984K
+  Privileged_RAM (xrw)       : ORIGIN = 0x20000000, LENGTH = 32K
+  RAM (xrw)                  : ORIGIN = 0x20008000, LENGTH = 96K
+  ITCMRAM (xrw)              : ORIGIN = 0x00000000, LENGTH = 64K
 }
 
 /* Variables used by FreeRTOS-MPU. */

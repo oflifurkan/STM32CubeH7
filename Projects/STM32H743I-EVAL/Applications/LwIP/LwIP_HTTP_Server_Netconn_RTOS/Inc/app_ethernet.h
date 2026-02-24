@@ -1,6 +1,6 @@
 /**
   ******************************************************************************
-  * @file    LwIP/LwIP_HTTP_Server_Netconn_RTOS/Inc/app_ethernet.h 
+  * @file    LwIP/LwIP_HTTP_Server_Netconn_RTOS/Inc/app_ethernet.h
   * @author  MCD Application Team
   * @brief   Header for app_ethernet.c module
   ******************************************************************************
@@ -41,7 +41,7 @@
 /* Exported functions ------------------------------------------------------- */
 void ethernet_link_status_updated(struct netif *netif);
 #if LWIP_DHCP
-void DHCP_Thread(void const * argument);
+void DHCP_Thread(void* argument);
 #endif
 
 #ifdef __cplusplus

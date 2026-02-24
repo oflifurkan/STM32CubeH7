@@ -20,7 +20,8 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "cmsis_os.h"
+#include "cmsis_os2.h"
+#include "FreeRTOS.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -48,7 +49,7 @@ static osThreadAttr_t attr = {
                         .priority = osPriorityNormal,
                         .stack_size = configMINIMAL_STACK_SIZE,
                       };
-osSemaphoreId_t osSemaphoreHandle;				 
+osSemaphoreId_t osSemaphoreHandle;
 /* USER CODE BEGIN PV */
 __IO uint32_t OsStatus = 0;
 /* USER CODE END PV */
@@ -105,7 +106,7 @@ int main(void)
   /* USER CODE END 2 */
   osKernelInitialize();
   /* USER CODE BEGIN RTOS_MUTEX */
- 
+
   /* USER CODE END RTOS_MUTEX */
 
   /* Create the semaphores(s) */
@@ -126,13 +127,12 @@ int main(void)
   SEM_ThreadHandle = osThreadNew(SemaphoreTest, NULL, (const osThreadAttr_t *)&attr);
 
   /* USER CODE BEGIN RTOS_THREADS */
- 
+
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_QUEUES */
- 
-  /* USER CODE END RTOS_QUEUES */
 
+  /* USER CODE END RTOS_QUEUES */
 
   /* Start scheduler */
   osKernelStart();
@@ -242,7 +242,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 /* USER CODE BEGIN Header_SemaphoreTest */
 /**
   * @brief  Function implementing the SEM_Thread thread.
-  * @param  argument: Not used 
+  * @param  argument: Not used
   * @retval None
   */
 /* USER CODE END Header_SemaphoreTest */
@@ -265,7 +265,7 @@ static void SemaphoreTest(void *argument)
       }
     }
   }
-  /* USER CODE END 5 */ 
+  /* USER CODE END 5 */
 }
 
 /**
@@ -276,10 +276,13 @@ void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
+  /* Infinite loop */
+  while (1)
+  {
 
+  }
   /* USER CODE END Error_Handler_Debug */
 }
-
 
 /**
   * @brief  Configure the MPU attributes
@@ -312,7 +315,7 @@ static void MPU_Config(void)
   HAL_MPU_Enable(MPU_PRIVILEGED_DEFAULT);
 }
 
-#ifdef  USE_FULL_ASSERT
+#ifdef USE_FULL_ASSERT
 
 /**
   * @brief  Reports the name of the source file and the source line number
@@ -329,7 +332,9 @@ void assert_failed(uint8_t *file, uint32_t line)
 
   /* Infinite loop */
   while (1)
-  {}
+  {
+
+  }
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */

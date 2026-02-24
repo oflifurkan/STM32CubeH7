@@ -33,6 +33,7 @@
 #include "udpecho.h"
 
 #include "lwip/opt.h"
+#include "FreeRTOS.h"
 
 #if LWIP_NETCONN
 
@@ -80,10 +81,9 @@ udpecho_thread(void *arg)
   }
 }
 /*-----------------------------------------------------------------------------------*/
-void
-udpecho_init(void)
+void udpecho_init(void)
 {
-  sys_thread_new("udpecho_thread", udpecho_thread, NULL, (configMINIMAL_STACK_SIZE*2), UDPECHO_THREAD_PRIO);
+  sys_thread_new("udpecho_thread", udpecho_thread, NULL, (configMINIMAL_STACK_SIZE*8), UDPECHO_THREAD_PRIO);
 }
 
 #endif /* LWIP_NETCONN */

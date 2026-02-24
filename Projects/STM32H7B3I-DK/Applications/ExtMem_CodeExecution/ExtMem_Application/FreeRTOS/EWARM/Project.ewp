@@ -354,12 +354,13 @@
                     <name>CCIncludePath2</name>
                     <state>$PROJ_DIR$\..\Inc</state>
                     <state>$PROJ_DIR$\..\..\..\..\..\..\..\Drivers\CMSIS\Include</state>
+                    <state>$PROJ_DIR$\..\..\..\..\..\..\..\Drivers\CMSIS\RTOS2\Include</state>
                     <state>$PROJ_DIR$\..\..\..\..\..\..\..\Drivers\CMSIS\Device\ST\STM32H7xx\Include</state>
                     <state>$PROJ_DIR$\..\..\..\..\..\..\..\Drivers\CMSIS\Device\ST\STM32H7xx\Include</state>
                     <state>$PROJ_DIR$\..\..\..\..\..\..\..\Drivers\STM32H7xx_HAL_Driver\Inc</state>
                     <state>$PROJ_DIR$\..\..\..\..\..\..\..\Drivers\BSP\STM32H7B3I-DK</state>
-                    <state>$PROJ_DIR$\..\..\..\..\..\..\..\Middlewares\Third_Party\FreeRTOS\Source\portable\IAR\ARM_CM7\r0p1</state>
-                    <state>$PROJ_DIR$\..\..\..\..\..\..\..\Middlewares\Third_Party\FreeRTOS\Source\CMSIS_RTOS</state>
+                    <state>$PROJ_DIR$\..\..\..\..\..\..\..\Middlewares\Third_Party\FreeRTOS\Source\portable\IAR\ARM_CM4F</state>
+                    <state>$PROJ_DIR$\..\..\..\..\..\..\..\Middlewares\Third_Party\FreeRTOS\Source\CMSIS_RTOS_V2</state>
                     <state>$PROJ_DIR$\..\..\..\..\..\..\..\Middlewares\Third_Party\FreeRTOS\Source\include</state>
                     <state>$PROJ_DIR$\..\..\..\..\..\..\..\Drivers\BSP\Components\Common</state>
                     <state>$PROJ_DIR$\..\..\..\..\..\..\..\Utilities\Fonts</state>
@@ -1423,12 +1424,13 @@
                     <name>CCIncludePath2</name>
                     <state>$PROJ_DIR$\..\Inc</state>
                     <state>$PROJ_DIR$\..\..\..\..\..\..\..\Drivers\CMSIS\Include</state>
+                    <state>$PROJ_DIR$\..\..\..\..\..\..\..\Drivers\CMSIS\RTOS2\Include</state>
                     <state>$PROJ_DIR$\..\..\..\..\..\..\..\Drivers\CMSIS\Device\ST\STM32H7xx\Include</state>
                     <state>$PROJ_DIR$\..\..\..\..\..\..\..\Drivers\CMSIS\Device\ST\STM32H7xx\Include</state>
                     <state>$PROJ_DIR$\..\..\..\..\..\..\..\Drivers\STM32H7xx_HAL_Driver\Inc</state>
                     <state>$PROJ_DIR$\..\..\..\..\..\..\..\Drivers\BSP\STM32H7B3I-DK</state>
-                    <state>$PROJ_DIR$\..\..\..\..\..\..\..\Middlewares\Third_Party\FreeRTOS\Source\portable\IAR\ARM_CM7\r0p1</state>
-                    <state>$PROJ_DIR$\..\..\..\..\..\..\..\Middlewares\Third_Party\FreeRTOS\Source\CMSIS_RTOS</state>
+                    <state>$PROJ_DIR$\..\..\..\..\..\..\..\Middlewares\Third_Party\FreeRTOS\Source\portable\IAR\ARM_CM4F</state>
+                    <state>$PROJ_DIR$\..\..\..\..\..\..\..\Middlewares\Third_Party\FreeRTOS\Source\CMSIS_RTOS_V2</state>
                     <state>$PROJ_DIR$\..\..\..\..\..\..\..\Middlewares\Third_Party\FreeRTOS\Source\include</state>
                     <state>$PROJ_DIR$\..\..\..\..\..\..\..\Drivers\BSP\Components\Common</state>
                     <state>$PROJ_DIR$\..\..\..\..\..\..\..\Utilities\Fonts</state>
@@ -2492,12 +2494,13 @@
                     <name>CCIncludePath2</name>
                     <state>$PROJ_DIR$\..\Inc</state>
                     <state>$PROJ_DIR$\..\..\..\..\..\..\..\Drivers\CMSIS\Include</state>
+                    <state>$PROJ_DIR$\..\..\..\..\..\..\..\Drivers\CMSIS\RTOS2\Include</state>
                     <state>$PROJ_DIR$\..\..\..\..\..\..\..\Drivers\CMSIS\Device\ST\STM32H7xx\Include</state>
                     <state>$PROJ_DIR$\..\..\..\..\..\..\..\Drivers\CMSIS\Device\ST\STM32H7xx\Include</state>
                     <state>$PROJ_DIR$\..\..\..\..\..\..\..\Drivers\STM32H7xx_HAL_Driver\Inc</state>
                     <state>$PROJ_DIR$\..\..\..\..\..\..\..\Drivers\BSP\STM32H7B3I-DK</state>
-                    <state>$PROJ_DIR$\..\..\..\..\..\..\..\Middlewares\Third_Party\FreeRTOS\Source\portable\IAR\ARM_CM7\r0p1</state>
-                    <state>$PROJ_DIR$\..\..\..\..\..\..\..\Middlewares\Third_Party\FreeRTOS\Source\CMSIS_RTOS</state>
+                    <state>$PROJ_DIR$\..\..\..\..\..\..\..\Middlewares\Third_Party\FreeRTOS\Source\portable\IAR\ARM_CM4F</state>
+                    <state>$PROJ_DIR$\..\..\..\..\..\..\..\Middlewares\Third_Party\FreeRTOS\Source\CMSIS_RTOS_V2</state>
                     <state>$PROJ_DIR$\..\..\..\..\..\..\..\Middlewares\Third_Party\FreeRTOS\Source\include</state>
                     <state>$PROJ_DIR$\..\..\..\..\..\..\..\Drivers\BSP\Components\Common</state>
                     <state>$PROJ_DIR$\..\..\..\..\..\..\..\Utilities\Fonts</state>
@@ -3299,24 +3302,30 @@
         <name>Middlewares</name>
         <group>
             <name>FreeRTOS</name>
-            <group>
-                <name>CMSIS_RTOS</name>
-                <file>
-                    <name>$PROJ_DIR$\..\..\..\..\..\..\..\Middlewares\Third_Party\FreeRTOS\Source\CMSIS_RTOS\cmsis_os.c</name>
-                </file>
-            </group>
-            <group>
-                <name>portable</name>
-                <file>
-                    <name>$PROJ_DIR$\..\..\..\..\..\..\..\Middlewares\Third_Party\FreeRTOS\Source\portable\MemMang\heap_1.c</name>
-                </file>
-                <file>
+                <group>
+                  <name>CMSIS_RTOS_V2</name>
+                  <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\..\Middlewares\Third_Party\FreeRTOS\Source\CMSIS_RTOS_V2\cmsis_os2.c</name>
+                  </file>
+                </group>
+                <group>
+                  <name>portable</name>
+                  <file>
+                    <name>$PROJ_DIR$\..\..\..\..\..\..\..\Middlewares\Third_Party\FreeRTOS\Source\portable\MemMang\heap_4.c</name>
+                  </file>
+                  <file>
                     <name>$PROJ_DIR$\..\..\..\..\..\..\..\Middlewares\Third_Party\FreeRTOS\Source\portable\IAR\ARM_CM4F\port.c</name>
-                </file>
-                <file>
+                  </file>
+                  <file>
                     <name>$PROJ_DIR$\..\..\..\..\..\..\..\Middlewares\Third_Party\FreeRTOS\Source\portable\IAR\ARM_CM4F\portasm.s</name>
-                </file>
-            </group>
+                  </file>
+                </group>
+            <file>
+                <name>$PROJ_DIR$\..\..\..\..\..\..\..\Middlewares\Third_Party\FreeRTOS\Source\croutine.c</name>
+            </file>
+            <file>
+                <name>$PROJ_DIR$\..\..\..\..\..\..\..\Middlewares\Third_Party\FreeRTOS\Source\event_groups.c</name>
+            </file>
             <file>
                 <name>$PROJ_DIR$\..\..\..\..\..\..\..\Middlewares\Third_Party\FreeRTOS\Source\list.c</name>
             </file>
@@ -3325,6 +3334,9 @@
             </file>
             <file>
                 <name>$PROJ_DIR$\..\..\..\..\..\..\..\Middlewares\Third_Party\FreeRTOS\Source\tasks.c</name>
+            </file>
+            <file>
+                <name>$PROJ_DIR$\..\..\..\..\..\..\..\Middlewares\Third_Party\FreeRTOS\Source\timers.c</name>
             </file>
         </group>
     </group>

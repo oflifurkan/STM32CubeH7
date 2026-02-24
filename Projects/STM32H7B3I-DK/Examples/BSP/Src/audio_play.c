@@ -103,6 +103,7 @@ void AudioPlay_demo (void)
   uint32_t *AudioFreq_ptr;
   uint32_t x_size, y_size;
   uint8_t ts_status = BSP_ERROR_NONE;
+  int32_t probeStatus;
   static Point PointsVolUp[]   = {{380, 150}, {430, 150}, {405, 100}};
   static Point PointsVolDown[] = {{380, 190}, {430, 190}, {405, 240}};
   static Point PointsFreqUp[]   = {{70, 150}, {120, 150}, {95, 100}};
@@ -125,7 +126,19 @@ void AudioPlay_demo (void)
   Audio_SetHint(0);
   UTIL_LCD_SetFont(&Font20);
 
-  hTS.Orientation = TS_SWAP_XY;
+  probeStatus = GT911_Probe(TS_INSTANCE);
+  if (probeStatus == BSP_ERROR_NONE)
+  {
+    hTS.Orientation = TS_SWAP_NONE;
+  }
+  else
+  {
+    probeStatus = FT5336_Probe(TS_INSTANCE);
+    if (probeStatus == BSP_ERROR_NONE)
+    {
+      hTS.Orientation = TS_SWAP_XY;
+    }
+  }
   hTS.Accuracy = 0;
   hTS.Width = x_size;
   hTS.Height = y_size;

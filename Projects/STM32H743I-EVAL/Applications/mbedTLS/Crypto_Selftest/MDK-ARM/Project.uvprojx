@@ -336,9 +336,9 @@
             <v6Rtti>0</v6Rtti>
             <VariousControls>
               <MiscControls>--C99</MiscControls>
-              <Define>USE_HAL_DRIVER,USE_PWR_LDO_SUPPLY,STM32H753xx,USE_STM32H743I_EVAL,USE_IOEXPANDER,MBEDTLS_CONFIG_FILE=&lt;mbedtls_config.h&gt;,USE_LCD</Define>
+              <Define>USE_HAL_DRIVER,USE_PWR_LDO_SUPPLY,STM32H753xx,USE_STM32H743I_EVAL,USE_IOEXPANDER,MBEDTLS_CONFIG_FILE=&lt;mbedtls_config.h&gt;,USE_LCD,USE_CMSIS_V2</Define>
               <Undefine></Undefine>
-              <IncludePath>../Inc;../../../../../../Drivers/CMSIS/Device/ST/STM32H7xx/Include;../../../../../../Drivers/STM32H7xx_HAL_Driver/Inc;../../../../../../Drivers/BSP/STM32H743I-EVAL;../../../../../../Drivers/BSP/Components/Common;../../../../../../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../../../../../../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS;../../../../../../Middlewares/Third_Party/FreeRTOS/Source/include;../../../../../../Middlewares/Third_Party/FreeRTOS/Source;../../../../../../Middlewares/Third_Party/mbedTLS/include;../../../../../../Middlewares/Third_Party/mbedTLS/include;../../../../../../Drivers/BSP/Components;../../../../../../Drivers/BSP/Components/Common;../../../../../../Utilities;../../../../../../Utilities/Fonts;../../../../../../Utilities/Lcd_trace;../../../../../../Utilities/lcd;../../../../../../Drivers/CMSIS/Include</IncludePath>
+              <IncludePath>../Inc;../../../../../../Drivers/CMSIS/Device/ST/STM32H7xx/Include;../../../../../../Drivers/STM32H7xx_HAL_Driver/Inc;../../../../../../Drivers/BSP/STM32H743I-EVAL;../../../../../../Drivers/BSP/Components/Common;../../../../../../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../../../../../../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2;../../../../../../Middlewares/Third_Party/FreeRTOS/Source/include;../../../../../../Middlewares/Third_Party/FreeRTOS/Source;../../../../../../Middlewares/Third_Party/mbedTLS/include;../../../../../../Middlewares/Third_Party/mbedTLS/include;../../../../../../Drivers/BSP/Components;../../../../../../Drivers/BSP/Components/Common;../../../../../../Utilities;../../../../../../Utilities/Fonts;../../../../../../Utilities/Lcd_trace;../../../../../../Utilities/lcd;../../../../../../Drivers/CMSIS/Include;../../../../../../Drivers/CMSIS/RTOS2/Include</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -747,15 +747,20 @@
               <FileType>1</FileType>
               <FilePath>../../../../../../Middlewares/Third_Party/FreeRTOS/Source/timers.c</FilePath>
             </File>
+            <File>
+              <FileName>event_groups.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Middlewares/Third_Party/FreeRTOS/Source/event_groups.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
-          <GroupName>Middlewares/FreeRTOS/CMSIS_RTOS</GroupName>
+          <GroupName>Middlewares/FreeRTOS/CMSIS_RTOS_V2</GroupName>
           <Files>
             <File>
-              <FileName>cmsis_os.c</FileName>
+              <FileName>cmsis_os2.c</FileName>
               <FileType>1</FileType>
-              <FilePath>../../../../../../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/cmsis_os.c</FilePath>
+              <FilePath>../../../../../../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.c</FilePath>
             </File>
           </Files>
         </Group>

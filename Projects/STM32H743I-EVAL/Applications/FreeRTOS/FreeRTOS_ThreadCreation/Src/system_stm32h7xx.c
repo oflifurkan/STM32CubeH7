@@ -126,7 +126,7 @@
   * @{
   */
 #if defined (DATA_IN_ExtSRAM) || defined (DATA_IN_ExtSDRAM)
-  static void SystemInit_ExtMemCtl(void); 
+static void SystemInit_ExtMemCtl(void); 
 #endif /* DATA_IN_ExtSRAM || DATA_IN_ExtSDRAM */
 
 /**
@@ -157,7 +157,7 @@ void SystemInit (void)
   /* Reset the RCC clock configuration to the default reset state ------------*/
   /* Set HSION bit */
   RCC->CR |= RCC_CR_HSION;
-  
+
   /* Reset CFGR register */
   RCC->CFGR = 0x00000000;
 
@@ -169,7 +169,7 @@ void SystemInit (void)
 
   /* Reset D2CFGR register */
   RCC->D2CFGR = 0x00000000;
-  
+
   /* Reset D3CFGR register */
   RCC->D3CFGR = 0x00000000;
 
@@ -187,14 +187,14 @@ void SystemInit (void)
   RCC->PLL2DIVR = 0x00000000;
 
   /* Reset PLL2FRACR register */
-  
+
   RCC->PLL2FRACR = 0x00000000;
   /* Reset PLL3DIVR register */
   RCC->PLL3DIVR = 0x00000000;
 
   /* Reset PLL3FRACR register */
   RCC->PLL3FRACR = 0x00000000;
-  
+
   /* Reset HSEBYP bit */
   RCC->CR &= 0xFFFBFFFFU;
 
@@ -216,27 +216,35 @@ void SystemInit (void)
   (void) tmpreg;
 #endif /* DATA_IN_D2_SRAM */
 
-  
 
-/*
-   * Disable the FMC bank1 (enabled after reset).
-   * This, prevents CPU speculation access on this bank which blocks the use of FMC during
-   * 24us. During this time the others FMC master (such as LTDC) cannot use it!
-   */
-  FMC_Bank1_R->BTCR[0] = 0x000030D2;
+
+  if(READ_BIT(RCC->AHB3ENR, RCC_AHB3ENR_FMCEN) == 0U)
+  {
+    /* Enable the FMC interface clock */
+    SET_BIT(RCC->AHB3ENR, RCC_AHB3ENR_FMCEN);
+
+    /*
+     * Disable the FMC bank1 (enabled after reset).
+     * This, prevents CPU speculation access on this bank which blocks the use of FMC during
+     * 24us. During this time the others FMC master (such as LTDC) cannot use it!
+     */
+    FMC_Bank1_R->BTCR[0] = 0x000030D2;
+
+    /* Disable the FMC interface clock */
+    CLEAR_BIT(RCC->AHB3ENR, RCC_AHB3ENR_FMCEN);
+  }
 
 #if defined (DATA_IN_ExtSRAM) || defined (DATA_IN_ExtSDRAM)
-  SystemInit_ExtMemCtl(); 
+SystemInit_ExtMemCtl(); 
 #endif /* DATA_IN_ExtSRAM || DATA_IN_ExtSDRAM */
 
 
   /* Configure the Vector Table location add offset address ------------------*/
 #ifdef VECT_TAB_SRAM
-  SCB->VTOR = D1_AXISRAM_BASE  | VECT_TAB_OFFSET;       /* Vector Table Relocation in Internal SRAM */
+SCB->VTOR = D1_AXISRAM_BASE  | VECT_TAB_OFFSET;       /* Vector Table Relocation in Internal SRAM */
 #else
-  SCB->VTOR = FLASH_BANK1_BASE | VECT_TAB_OFFSET;       /* Vector Table Relocation in Internal FLASH */
+SCB->VTOR = FLASH_BANK1_BASE | VECT_TAB_OFFSET;       /* Vector Table Relocation in Internal FLASH */
 #endif  
-
 
 }
 
@@ -371,14 +379,14 @@ void SystemInit_ExtMemCtl(void)
 #if defined (DATA_IN_ExtSDRAM) && defined (DATA_IN_ExtSRAM)
   register uint32_t tmpreg = 0, timeout = 0xFFFF;
   register __IO uint32_t index;
-  
+
   /* Enable GPIOD, GPIOE, GPIOF, GPIOG, GPIOH and GPIOI interface 
       clock */
   RCC->AHB4ENR |= 0x000001F8;
-  
+
   /* Delay after an RCC peripheral clock enabling */
   tmp = READ_BIT(RCC->AHB4ENR, RCC_AHB4ENR_GPIOEEN);
-  
+
   /* Connect PDx pins to FMC Alternate function */     
   GPIOD->AFR[0]  = 0x00CC00CC;
   GPIOD->AFR[1]  = 0xCCCCCCCC;
@@ -426,7 +434,7 @@ void SystemInit_ExtMemCtl(void)
   GPIOG->OTYPER  = 0x00000000;
   /* Configure PGx pins in Pull-up */ 
   GPIOG->PUPDR   = 0x40110555;
-  
+
   /* Connect PHx pins to FMC Alternate function */
   GPIOH->AFR[0]  = 0xCCC00000;
   GPIOH->AFR[1]  = 0xCCCCCCCC;
@@ -438,7 +446,7 @@ void SystemInit_ExtMemCtl(void)
   GPIOH->OTYPER  = 0x00000000;
   /* Configure PHx pins in Pull-up */
   GPIOH->PUPDR   = 0x55555400;
-  
+
   /* Connect PIx pins to FMC Alternate function */
   GPIOI->AFR[0]  = 0xCCCCCCCC;
   GPIOI->AFR[1]  = 0x00000CC0;
@@ -450,15 +458,15 @@ void SystemInit_ExtMemCtl(void)
   GPIOI->OTYPER  = 0x00000000;
   /* Configure PIx pins in Pull-up */
   GPIOI->PUPDR   = 0x00145555;
-  
+
   /* Enable the FMC/FSMC interface clock */
   (RCC->AHB3ENR |= (RCC_AHB3ENR_FMCEN));
-  
+
   /* Configure and enable Bank1_SRAM2 */
   FMC_Bank1_R->BTCR[4]  = 0x00001091;
   FMC_Bank1_R->BTCR[5]  = 0x00110212;
   FMC_Bank1E_R->BWTR[4] = 0x0FFFFFFF;
-  
+
   /*SDRAM Timing and access interface configuration*/
   /*LoadToActiveDelay  = 2
     ExitSelfRefreshDelay = 6
@@ -477,12 +485,12 @@ void SystemInit_ExtMemCtl(void)
     SDClockPeriod      = FMC_SDRAM_CLOCK_PERIOD_2
     ReadBurst          = FMC_SDRAM_RBURST_ENABLE
     ReadPipeDelay      = FMC_SDRAM_RPIPE_DELAY_0*/
-  
+
   FMC_Bank5_6_R->SDCR[0] = 0x00001800;
   FMC_Bank5_6_R->SDCR[1] = 0x00000165;
   FMC_Bank5_6_R->SDTR[0] = 0x00105000;
   FMC_Bank5_6_R->SDTR[1] = 0x01010351;
-  
+
   /* SDRAM initialization sequence */
   /* Clock enable command */ 
   FMC_Bank5_6_R->SDCMR = 0x00000009; 
@@ -494,7 +502,7 @@ void SystemInit_ExtMemCtl(void)
 
   /* Delay */
   for (index = 0; index<1000; index++);
-  
+
   /* PALL command */ 
   FMC_Bank5_6_R->SDCMR = 0x0000000A;
   timeout = 0xFFFF;
@@ -502,7 +510,7 @@ void SystemInit_ExtMemCtl(void)
   {
     tmpreg = FMC_Bank5_6_R->SDSR & 0x00000020; 
   }
-  
+
   FMC_Bank5_6_R->SDCMR = 0x000000EB;
   timeout = 0xFFFF;
   while((tmpreg != 0) && (timeout-- > 0))
@@ -526,7 +534,7 @@ void SystemInit_ExtMemCtl(void)
 
    /*FMC controller Enable*/
   FMC_Bank1_R->BTCR[0]  |= 0x80000000;
-  
+
 #elif defined (DATA_IN_ExtSDRAM)
   register uint32_t tmpreg = 0, timeout = 0xFFFF;
   register __IO uint32_t index;
@@ -534,7 +542,7 @@ void SystemInit_ExtMemCtl(void)
   /* Enable GPIOD, GPIOE, GPIOF, GPIOG, GPIOH and GPIOI interface 
       clock */
   RCC->AHB4ENR |= 0x000001F8;
-  
+
   /* Connect PDx pins to FMC Alternate function */
   GPIOD->AFR[0]  = 0x000000CC;
   GPIOD->AFR[1]  = 0xCC000CCC;
@@ -546,7 +554,7 @@ void SystemInit_ExtMemCtl(void)
   GPIOD->OTYPER  = 0x00000000;
   /* Configure PDx pins in Pull-up */
   GPIOD->PUPDR   = 0x50150005;
-   
+
   /* Connect PEx pins to FMC Alternate function */
   GPIOE->AFR[0]  = 0xC00000CC;
   GPIOE->AFR[1]  = 0xCCCCCCCC;
@@ -558,7 +566,7 @@ void SystemInit_ExtMemCtl(void)
   GPIOE->OTYPER  = 0x00000000;
   /* Configure PEx pins in Pull-up */
   GPIOE->PUPDR   = 0x55554005;
-  
+
   /* Connect PFx pins to FMC Alternate function */
   GPIOF->AFR[0]  = 0x00CCCCCC;
   GPIOF->AFR[1]  = 0xCCCCC000;
@@ -570,7 +578,7 @@ void SystemInit_ExtMemCtl(void)
   GPIOF->OTYPER  = 0x00000000;
   /* Configure PFx pins in Pull-up */
   GPIOF->PUPDR   = 0x55400555;
-  
+
   /* Connect PGx pins to FMC Alternate function */
   GPIOG->AFR[0]  = 0x00CCCCCC;
   GPIOG->AFR[1]  = 0xC000000C;
@@ -582,7 +590,7 @@ void SystemInit_ExtMemCtl(void)
   GPIOG->OTYPER  = 0x00000000;
   /* Configure PGx pins in Pull-up */ 
   GPIOG->PUPDR   = 0x40010555;
-  
+
   /* Connect PHx pins to FMC Alternate function */
   GPIOH->AFR[0]  = 0xCCC00000;
   GPIOH->AFR[1]  = 0xCCCCCCCC;
@@ -594,7 +602,7 @@ void SystemInit_ExtMemCtl(void)
   GPIOH->OTYPER  = 0x00000000;
   /* Configure PHx pins in Pull-up */
   GPIOH->PUPDR   = 0x55555400;
-  
+
   /* Connect PIx pins to FMC Alternate function */
   GPIOI->AFR[0]  = 0xCCCCCCCC;
   GPIOI->AFR[1]  = 0x00000CC0;
@@ -606,7 +614,7 @@ void SystemInit_ExtMemCtl(void)
   GPIOI->OTYPER  = 0x00000000;
   /* Configure PIx pins in Pull-up */
   GPIOI->PUPDR   = 0x00145555;
-  
+
 /*-- FMC Configuration ------------------------------------------------------*/
   /* Enable the FMC interface clock */
   (RCC->AHB3ENR |= (RCC_AHB3ENR_FMCEN));
@@ -628,7 +636,7 @@ void SystemInit_ExtMemCtl(void)
     SDClockPeriod      = FMC_SDRAM_CLOCK_PERIOD_2
     ReadBurst          = FMC_SDRAM_RBURST_ENABLE
     ReadPipeDelay      = FMC_SDRAM_RPIPE_DELAY_0*/
-  
+
   FMC_Bank5_6_R->SDCR[0] = 0x00001800;
   FMC_Bank5_6_R->SDCR[1] = 0x00000165;
   FMC_Bank5_6_R->SDTR[0] = 0x00105000;
@@ -682,7 +690,7 @@ void SystemInit_ExtMemCtl(void)
 /*-- GPIOs Configuration -----------------------------------------------------*/
    /* Enable GPIOD, GPIOE, GPIOF and GPIOG interface clock */
   RCC->AHB4ENR   |= 0x00000078;
-  
+
   /* Connect PDx pins to FMC Alternate function */     
   GPIOD->AFR[0]  = 0x00CC00CC;
   GPIOD->AFR[1]  = 0xCCCCCCCC;
@@ -739,7 +747,7 @@ void SystemInit_ExtMemCtl(void)
   FMC_Bank1_R->BTCR[4]  = 0x00001091;
   FMC_Bank1_R->BTCR[5]  = 0x00110212;
   FMC_Bank1E_R->BWTR[4] = 0x0FFFFFFF;  
-  
+
   /*FMC controller Enable*/
   FMC_Bank1_R->BTCR[0]  |= 0x80000000;  
 

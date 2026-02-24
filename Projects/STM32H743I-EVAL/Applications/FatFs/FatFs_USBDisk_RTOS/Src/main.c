@@ -36,14 +36,20 @@ typedef enum {
   USBDISK_DISCONNECTED,    
 }USBDISK_ConnectionStateTypeDef;
 
-osMessageQId ConnectionEvent;
+osThreadId_t FS_AppThreadHandle;
+osMessageQueueId_t ConnectionEvent;
+static osThreadAttr_t attr = {
+                              .name = "uSDThread",
+                              .priority = osPriorityNormal,
+                              .stack_size = 8 * configMINIMAL_STACK_SIZE,
+                      };
 
 /* Private function prototypes -----------------------------------------------*/
 static void MPU_Config(void); 
 static void SystemClock_Config(void);
 static void USBH_UserProcess(USBH_HandleTypeDef *phost, uint8_t id);
 static void FS_FileOperations(void);
-static void FS_AppThread(void const *argument);
+static void FS_AppThread(void *argument);
 
 static void CPU_CACHE_Enable(void);
 static void Error_Handler(void);
@@ -84,14 +90,16 @@ int main(void)
   if(FATFS_LinkDriver(&USBH_Driver, USBDISKPath) == 0)
   {
     /*##-1- Start task #########################################################*/
-    osThreadDef(USER_Thread, FS_AppThread, osPriorityBelowNormal, 0, 8 * configMINIMAL_STACK_SIZE);
-    osThreadCreate(osThread(USER_Thread), NULL);
+    FS_AppThreadHandle = osThreadNew(FS_AppThread, NULL, (const osThreadAttr_t *)&attr);
     
     /*##-2- Create Application Queue ###########################################*/
-    osMessageQDef(osqueue, 1, uint16_t);
-    ConnectionEvent = osMessageCreate(osMessageQ(osqueue), NULL);
+    ConnectionEvent = osMessageQueueNew (1U, sizeof(uint16_t), NULL);
   }
-  /*##-3- Start scheduler ####################################################*/
+  
+  /*##-3- Init scheduler ####################################################*/
+  osKernelInitialize();
+
+  /*##-4- Start scheduler ####################################################*/
   osKernelStart();
 
   /* We should never get here as control is now taken by the scheduler */
@@ -103,9 +111,10 @@ int main(void)
   * @param  pvParameters not used
   * @retval None
   */
-static void FS_AppThread(void const *argument)
+static void FS_AppThread(void *argument)
 {
-  osEvent event;
+  uint32_t QueueMsg;
+  osStatus_t status;
   
   /* Init Host Library */
   USBH_Init(&hUSB_Host, USBH_UserProcess, 0);
@@ -118,11 +127,11 @@ static void FS_AppThread(void const *argument)
   
   for( ;; )
   {
-    event = osMessageGet(ConnectionEvent, osWaitForever);
+    status  = osMessageQueueGet(ConnectionEvent, &QueueMsg, 0U, 100U);
     
-    if(event.status == osEventMessage)
+    if(status == osOK)
     {
-      switch(event.value.v)
+      switch((USBDISK_ConnectionStateTypeDef)QueueMsg)
       {
       case USBDISK_CONNECTED:
         FS_FileOperations();
@@ -200,7 +209,9 @@ static void FS_FileOperations(void)
   * @retval None
   */
 static void USBH_UserProcess(USBH_HandleTypeDef *phost, uint8_t id)
-{  
+{
+  uint32_t QueueMsg;
+
   switch(id)
   { 
   case HOST_USER_SELECT_CONFIGURATION:
@@ -208,12 +219,16 @@ static void USBH_UserProcess(USBH_HandleTypeDef *phost, uint8_t id)
     
   case HOST_USER_DISCONNECTION:
     BSP_LED_Off(LED1); 
-    BSP_LED_Off(LED3);     
-    osMessagePut(ConnectionEvent, USBDISK_DISCONNECTED, 0); 
+    BSP_LED_Off(LED3);
+    QueueMsg = (uint32_t)USBDISK_DISCONNECTED;
+    osMessageQueuePut ( ConnectionEvent, &QueueMsg, 0U, 0U);
+
     break;
     
   case HOST_USER_CLASS_ACTIVE:
-    osMessagePut(ConnectionEvent, USBDISK_CONNECTED, 0);
+    QueueMsg = (uint32_t)USBDISK_CONNECTED;
+    osMessageQueuePut ( ConnectionEvent, &QueueMsg, 0U, 0U);
+
     break;
     
   default:

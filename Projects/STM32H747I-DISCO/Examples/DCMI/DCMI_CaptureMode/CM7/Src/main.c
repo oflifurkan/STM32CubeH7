@@ -411,13 +411,14 @@ static uint8_t LCD_Init(void){
 #if (USE_LCD_CTRL_NT35510 > 0)
   NT35510_IO_t              IOCtx;
   static NT35510_Object_t   NT35510Obj;
-  static void                *Lcd_CompObj = NULL;  
-#endif /* USE_LCD_CTRL_NT35510 */
-#if (USE_LCD_CTRL_OTM8009A > 0)
+  static void                *Lcd_CompObj = NULL;
+#elif (USE_LCD_CTRL_OTM8009A > 0)
   OTM8009A_IO_t              IOCtx;
   static OTM8009A_Object_t   OTM8009AObj;
-  static void                *Lcd_CompObj = NULL;  
-#endif /* USE_LCD_CTRL_OTM8009A */  
+  static void                *Lcd_CompObj = NULL;
+#else
+#error "No valid LCD controller defined (USE_LCD_CTRL_OTM8009A or USE_LCD_CTRL_NT35510 must be set)."
+#endif /* USE_LCD_CTRL_NT35510 */
   /* Toggle Hardware Reset of the DSI LCD using
      its XRES signal (active low) */
   BSP_LCD_Reset(0);

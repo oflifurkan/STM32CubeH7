@@ -68,7 +68,7 @@ mbedtls_pk_context pkey;
   mbedtls_ssl_cache_context cache;
 #endif
 
-void SSL_Server(void const *argument)
+void SSL_Server(void *argument)
 {
   int ret, len;
   UNUSED(argument);

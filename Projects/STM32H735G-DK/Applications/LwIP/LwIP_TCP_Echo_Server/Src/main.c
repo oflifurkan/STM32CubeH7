@@ -47,7 +47,6 @@ static void BSP_Config(void);
 static void Netif_Config(void);
 static void MPU_Config(void);
 static void CPU_CACHE_Enable(void);
-static void Error_Handler(void);
 /* Private functions ---------------------------------------------------------*/
 
 /**
@@ -358,7 +357,7 @@ static void CPU_CACHE_Enable(void)
   * @param  None
   * @retval None
   */
-static void Error_Handler(void)
+void Error_Handler(void)
 {
   /* User may add here some code to deal with this error */
   while(1)

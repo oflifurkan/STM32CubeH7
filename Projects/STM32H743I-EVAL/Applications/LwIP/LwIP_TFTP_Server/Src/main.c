@@ -51,7 +51,6 @@ static void BSP_Config(void);
 static void Netif_Config(void);
 static void MPU_Config(void);
 static void CPU_CACHE_Enable(void);
-
 /* Private functions ---------------------------------------------------------*/
 
 /**
@@ -357,6 +356,19 @@ static void CPU_CACHE_Enable(void)
 
   /* Enable D-Cache */
   SCB_EnableDCache();
+}
+
+/**
+  * @brief  This function is executed in case of error occurrence.
+  * @param  None
+  * @retval None
+  */
+void Error_Handler(void)
+{
+  /* User may add here some code to deal with this error */
+  while(1)
+  {
+  }
 }
 
 #ifdef  USE_FULL_ASSERT

@@ -37,7 +37,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
- 
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -144,7 +144,6 @@ void UsageFault_Handler(void)
 void DebugMon_Handler(void)
 {
 }
-
 
 /******************************************************************************/
 /*                 STM32H7xx Peripherals Interrupt Handlers                   */

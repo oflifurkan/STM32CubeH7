@@ -18,7 +18,8 @@
 
 /* Includes ------------------------------------------------------------------ */
 #include "main.h"
-
+#include "FreeRTOS.h"
+#include "cmsis_os2.h"
 /* Private typedef ----------------------------------------------------------- */
 /* Private define ------------------------------------------------------------ */
 /* Private macro ------------------------------------------------------------- */
@@ -26,11 +27,11 @@
 USBH_HandleTypeDef hUSBHost;
 MSC_ApplicationTypeDef Appli_state = APPLICATION_IDLE;
 char USBDISKPath[4];            /* USB Host logical drive path */
-osMessageQId AppliEvent;
+osMessageQueueId_t AppliEvent;
 /* Private function prototypes ----------------------------------------------- */
 static void SystemClock_Config(void);
 static void USBH_UserProcess(USBH_HandleTypeDef * phost, uint8_t id);
-static void StartThread(void const *argument);
+static void StartThread(void *argument);
 static void MSC_InitApplication(void);
 static void CPU_CACHE_Enable(void);
 static void MPU_Config(void);
@@ -53,6 +54,7 @@ int main(void)
   /* Enable the CPU Cache */
   CPU_CACHE_Enable();
 
+  osKernelInitialize();
   /* STM32H7xx HAL library initialization:
        - TIM6 timer is configured by default as source of HAL time base, but user
          can eventually implement his proper time base source (another general purpose
@@ -73,13 +75,15 @@ int main(void)
   HAL_PWREx_EnableUSBVoltageDetector();
 
   /* Start task */
-  osThreadDef(USER_Thread, StartThread, osPriorityNormal, 0,
-              8 * configMINIMAL_STACK_SIZE);
-  osThreadCreate(osThread(USER_Thread), NULL);
+  const osThreadAttr_t userThreadAttr = {
+    .name = "USER_Thread",
+    .stack_size = 8 * configMINIMAL_STACK_SIZE,
+    .priority = osPriorityNormal
+  };
+  osThreadNew(StartThread, NULL, &userThreadAttr);
 
   /* Create Application Queue */
-  osMessageQDef(osqueue, 1, uint16_t);
-  AppliEvent = osMessageCreate(osMessageQ(osqueue), NULL);
+  AppliEvent = osMessageQueueNew(1, sizeof(uint16_t), NULL);
 
   /* Start scheduler */
   osKernelStart();
@@ -94,9 +98,10 @@ int main(void)
   * @param  pvParameters not used
   * @retval None
   */
-static void StartThread(void const *argument)
+static void StartThread(void *argument)
 {
-  osEvent event;
+  uint16_t msg = 0;
+  osStatus_t status;
 
   /* Init MSC Application */
   MSC_InitApplication();
@@ -112,11 +117,10 @@ static void StartThread(void const *argument)
 
   for (;;)
   {
-    event = osMessageGet(AppliEvent, osWaitForever);
-
-    if (event.status == osEventMessage)
+    status = osMessageQueueGet(AppliEvent, &msg, NULL, osWaitForever);
+    if (status == osOK)
     {
-      switch (event.value.v)
+      switch (msg)
       {
       case APPLICATION_DISCONNECT:
         Appli_state = APPLICATION_DISCONNECT;
@@ -147,7 +151,9 @@ static void USBH_UserProcess(USBH_HandleTypeDef * phost, uint8_t id)
     break;
 
   case HOST_USER_DISCONNECTION:
-    osMessagePut(AppliEvent, APPLICATION_DISCONNECT, 0);
+  {
+    uint16_t val = APPLICATION_DISCONNECT;
+    (void)osMessageQueuePut(AppliEvent, &val, 0, 0);
     if (f_mount(NULL, "", 0) != FR_OK)
     {
       LCD_ErrTrace("ERROR : Cannot DeInitialize FatFs! \n");
@@ -157,10 +163,14 @@ static void USBH_UserProcess(USBH_HandleTypeDef * phost, uint8_t id)
       LCD_ErrTrace("ERROR : Cannot UnLink FatFS Driver! \n");
     }
     break;
+  }
 
   case HOST_USER_CLASS_ACTIVE:
-    osMessagePut(AppliEvent, APPLICATION_READY, 0);
+  {
+    uint16_t val = APPLICATION_READY;
+    (void)osMessageQueuePut(AppliEvent, &val, 0, 0);
     break;
+  }
 
   case HOST_USER_CONNECTION:
     if (FATFS_LinkDriver(&USBH_Driver, USBDISKPath) == 0)

@@ -101,7 +101,6 @@ void UsageFault_Handler(void)
   }
 }
 
-
 /**
   * @brief  This function handles Debug Monitor exception.
   * @param  None
@@ -109,16 +108,6 @@ void UsageFault_Handler(void)
   */
 void DebugMon_Handler(void)
 {
-}
-
-/**
-  * @brief  This function handles SysTick Handler.
-  * @param  None
-  * @retval None
-  */
-void SysTick_Handler(void)
-{
-  HAL_IncTick();
 }
 
 /******************************************************************************/
@@ -135,7 +124,7 @@ void SysTick_Handler(void)
   */
 void HSEM2_IRQHandler(void)
 {
-  HAL_HSEM_IRQHandler();	  
+  HAL_HSEM_IRQHandler();
 }
 
 /******************************************************************************/
@@ -153,12 +142,4 @@ void HSEM2_IRQHandler(void)
 /*void PPP_IRQHandler(void)
 {
 }*/
-
-/**
-  * @}
-  */
-
-/**
-  * @}
-  */
 

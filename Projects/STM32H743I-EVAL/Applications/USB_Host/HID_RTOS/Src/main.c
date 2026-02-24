@@ -25,13 +25,17 @@
 /* Private variables --------------------------------------------------------- */
 USBH_HandleTypeDef hUSBHost;
 HID_ApplicationTypeDef Appli_state = APPLICATION_IDLE;
-osMessageQId AppliEvent;
-
+osMessageQueueId_t AppliEvent;
+const osThreadAttr_t userThreadAttr = {
+  .name = "USER_Thread",
+  .stack_size = 8 * configMINIMAL_STACK_SIZE,
+  .priority = osPriorityNormal
+};
 /* Private function prototypes ----------------------------------------------- */
 static void SystemClock_Config(void);
 static void USBH_UserProcess(USBH_HandleTypeDef * phost, uint8_t id);
 static void HID_InitApplication(void);
-static void StartThread(void const *argument);
+static void StartThread(void *argument);
 static void MPU_Config(void);
 static void CPU_CACHE_Enable(void);
 /* Private functions --------------------------------------------------------- */
@@ -68,22 +72,20 @@ int main(void)
   /* Configure the System clock to have a frequency of 400 Mhz */
   SystemClock_Config();
 
-
   /* Enable the USB voltage level detector */
   HAL_PWREx_EnableUSBVoltageDetector();
 
+  /* Init scheduler */
+  osKernelInitialize();
+
   /* Start task */
-  osThreadDef(USER_Thread, StartThread, osPriorityNormal, 0,
-              8 * configMINIMAL_STACK_SIZE);
-  osThreadCreate(osThread(USER_Thread), NULL);
+  osThreadNew(StartThread, NULL, &userThreadAttr);
 
   /* Create Application Queue */
-  osMessageQDef(osqueue, 1, uint16_t);
-  AppliEvent = osMessageCreate(osMessageQ(osqueue), NULL);
+  AppliEvent = osMessageQueueNew(1, sizeof(uint16_t), NULL);
 
   /* Start scheduler */
   osKernelStart();
-
 
   /* We should never get here as control is now taken by the scheduler */
   for (;;);
@@ -94,9 +96,10 @@ int main(void)
   * @param  pvParameters not used
   * @retval None
   */
-static void StartThread(void const *argument)
+static void StartThread(void *argument)
 {
-  osEvent event;
+  uint16_t msg = 0;
+  osStatus_t status;
 
   /* Init HID Application */
   HID_InitApplication();
@@ -112,11 +115,11 @@ static void StartThread(void const *argument)
 
   for (;;)
   {
-    event = osMessageGet(AppliEvent, osWaitForever);
+    status =  osMessageQueueGet(AppliEvent, &msg, NULL, osWaitForever);
 
-    if (event.status == osEventMessage)
+    if (status == osOK)
     {
-      switch (event.value.v)
+      switch (msg)
       {
       case APPLICATION_DISCONNECT:
         Appli_state = APPLICATION_DISCONNECT;
@@ -143,22 +146,28 @@ static void USBH_UserProcess(USBH_HandleTypeDef * phost, uint8_t id)
 {
   switch (id)
   {
-  case HOST_USER_SELECT_CONFIGURATION:
+    case HOST_USER_SELECT_CONFIGURATION:
     break;
 
-  case HOST_USER_DISCONNECTION:
-    osMessagePut(AppliEvent, APPLICATION_DISCONNECT, 0);
-    break;
-
-  case HOST_USER_CLASS_ACTIVE:
-    osMessagePut(AppliEvent, APPLICATION_READY, 0);
-    break;
-
-  case HOST_USER_CONNECTION:
-    osMessagePut(AppliEvent, APPLICATION_START, 0);
-    break;
-
-  default:
+    case HOST_USER_DISCONNECTION:
+    {
+      uint16_t val = APPLICATION_DISCONNECT;
+      (void)osMessageQueuePut(AppliEvent, &val, 0, 0);
+      break;
+    }
+    case HOST_USER_CLASS_ACTIVE:
+    {
+      uint16_t val = APPLICATION_READY;
+      (void)osMessageQueuePut(AppliEvent, &val, 0, 0);
+      break;
+    }
+    case HOST_USER_CONNECTION:
+    {
+      uint16_t val = APPLICATION_START;
+      (void)osMessageQueuePut(AppliEvent, &val, 0, 0);
+      break;
+    }
+    default:
     break;
   }
 }

@@ -18,6 +18,7 @@
 
 /* Includes ------------------------------------------------------------------ */
 #include "main.h"
+#include "cmsis_os2.h"
 
 /* Private typedef ----------------------------------------------------------- */
 /* Private define ------------------------------------------------------------ */
@@ -30,7 +31,7 @@ uint32_t JoyState = JOY_NONE;
 __IO uint32_t Joy_State ;
 uint8_t prev_select = 0;
 uint8_t joy_select = 0;
-osSemaphoreId MenuEvent;
+osSemaphoreId_t MenuEvent;
 
 uint8_t *MSC_main_menu[] = {
   (uint8_t *)
@@ -43,7 +44,7 @@ uint8_t *MSC_main_menu[] = {
 
 /* Private function prototypes ----------------------------------------------- */
 static void MSC_SelectItem(uint8_t ** menu, uint8_t item);
-static void MSC_MenuThread(void const *argument);
+static void MSC_MenuThread(void *argument);
 static void MSC_DEMO_ProbeKey(uint32_t state);
 /* Private functions --------------------------------------------------------- */
 
@@ -55,18 +56,21 @@ static void MSC_DEMO_ProbeKey(uint32_t state);
 void Menu_Init(void)
 {
   /* Create Menu Semaphore */
-  osSemaphoreDef(osSem);
-
-  MenuEvent = osSemaphoreCreate(osSemaphore(osSem), 1);
+  const osSemaphoreAttr_t semAttr = {
+    .name = "osSem"
+  };
+  MenuEvent = osSemaphoreNew(1, 1, &semAttr);
 
   /* Force menu to show Item 0 by default */
   osSemaphoreRelease(MenuEvent);
 
   /* Menu task */
-  osThreadDef(Menu_Thread, MSC_MenuThread, osPriorityHigh, 0,
-              8 * configMINIMAL_STACK_SIZE);
-
-  osThreadCreate(osThread(Menu_Thread), NULL);
+  const osThreadAttr_t menuThreadAttr = {
+    .name = "Menu_Thread",
+    .priority = osPriorityHigh,
+    .stack_size = 8 * configMINIMAL_STACK_SIZE
+  };
+  osThreadNew(MSC_MenuThread, NULL, &menuThreadAttr);
 
   UTIL_LCD_SetTextColor(UTIL_LCD_COLOR_GREEN);
   UTIL_LCD_DisplayStringAtLine(17,
@@ -82,11 +86,11 @@ void Menu_Init(void)
   * @param  pvParameters not used
   * @retval None
   */
-static void MSC_MenuThread(void const *argument)
+static void MSC_MenuThread(void *argument)
 {
   for (;;)
   {
-    if (osSemaphoreWait(MenuEvent, osWaitForever) == osOK)
+    if (osSemaphoreAcquire(MenuEvent, osWaitForever) == osOK)
     {
       switch (msc_demo.state)
       {

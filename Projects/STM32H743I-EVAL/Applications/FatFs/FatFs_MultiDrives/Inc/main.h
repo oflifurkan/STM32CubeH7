@@ -28,7 +28,6 @@
 
 #include "usbh_msc.h"
 #include "usbh_core.h"
-#include "cmsis_os.h"
 
 /* FatFs includes component */
 #include "ff.h"

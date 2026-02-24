@@ -19,7 +19,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "stm32h7xx_it.h"
 #include "main.h"
-#include "cmsis_os.h"
+#include "cmsis_os2.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -27,7 +27,7 @@
 /* Private variables ---------------------------------------------------------*/
 extern ETH_HandleTypeDef EthHandle;
 /* Private function prototypes -----------------------------------------------*/
-void ETH_IRQHandler(void);
+
 /* Private functions ---------------------------------------------------------*/
 
 /******************************************************************************/
@@ -105,16 +105,6 @@ void DebugMon_Handler(void)
 {
 }
 
-/**
-  * @brief  This function handles SysTick Handler.
-  * @param  None
-  * @retval None
-  */
-void SysTick_Handler(void)
-{
-  osSystickHandler();
-}
-  
 
 /******************************************************************************/
 /*                 STM32H7xx Peripherals Interrupt Handlers                   */
@@ -135,7 +125,7 @@ void ETH_IRQHandler(void)
 
 /**
   * @}
-  */ 
+  */
 
 /**
   * @}

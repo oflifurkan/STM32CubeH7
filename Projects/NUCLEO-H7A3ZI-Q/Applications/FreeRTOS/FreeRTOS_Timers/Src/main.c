@@ -20,7 +20,8 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "cmsis_os.h"
+#include "cmsis_os2.h"
+#include "FreeRTOS.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -74,7 +75,7 @@ static void SystemClock_Config(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-  
+
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -113,22 +114,21 @@ int main(void)
 
   /* Create the timer(s) */
   LEDTimerHandle = osTimerNew(osTimerCallback, osTimerPeriodic, NULL, NULL);
-  
+
   /* USER CODE BEGIN RTOS_TIMERS */
   osTimerStart(LEDTimerHandle, 200);
   /* USER CODE END RTOS_TIMERS */
-  
+
   /* definition and creation of LEDThread */
   attr.name = "LEDThread";
   LEDThreadHandle = osThreadNew(ToggleLEDsThread, NULL, (const osThreadAttr_t *)&attr);
-  
+
   /* USER CODE BEGIN RTOS_THREADS */
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_QUEUES */
-  
+
   /* USER CODE END RTOS_QUEUES */
- 
 
   /* Start scheduler */
   osKernelStart();
@@ -229,7 +229,7 @@ static void SystemClock_Config(void)
 /* USER CODE BEGIN Header_ToggleLEDsThread */
 /**
   * @brief  Function implementing the LEDThread thread.
-  * @param  argument: Not used 
+  * @param  argument: Not used
   * @retval None
   */
 /* USER CODE END Header_ToggleLEDsThread */
@@ -246,7 +246,7 @@ static void ToggleLEDsThread(void *argument)
 
     osDelay(400);
   }
-  /* USER CODE END 5 */ 
+  /* USER CODE END 5 */
 }
 
 /* osTimerCallback function */
@@ -259,7 +259,7 @@ static void osTimerCallback(void *argument)
   BSP_LED_Toggle(LED1);
   if (TimeCounter == 25)
   {
-      TimeCounter = 0;
+    TimeCounter = 0;
   }
   /* USER CODE END osTimerCallback */
 }
@@ -272,10 +272,13 @@ void Error_Handler(void)
   {
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
+  /* Infinite loop */
+  while (1)
+  {
 
+  }
   /* USER CODE END Error_Handler_Debug */
 }
-
 
 /**
   * @brief  Configure the MPU attributes
@@ -325,7 +328,9 @@ void assert_failed(uint8_t *file, uint32_t line)
 
   /* Infinite loop */
   while (1)
-  {}
+  {
+
+  }
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */

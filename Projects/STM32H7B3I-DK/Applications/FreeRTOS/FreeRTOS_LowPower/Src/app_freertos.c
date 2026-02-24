@@ -80,7 +80,7 @@ void PreSleepProcessing(uint32_t * ulExpectedIdleTime)
   */
   *ulExpectedIdleTime = 0;
 
-  /*Enter to sleep Mode using the HAL function HAL_PWR_EnterSLEEPMode with WFI instruction*/
+  /* Enter to sleep Mode using the HAL function HAL_PWR_EnterSLEEPMode with WFI instruction */
   HAL_PWR_EnterSLEEPMode(PWR_MAINREGULATOR_ON, PWR_SLEEPENTRY_WFI);
 }
 

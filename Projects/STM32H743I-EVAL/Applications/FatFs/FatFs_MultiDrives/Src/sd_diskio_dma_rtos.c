@@ -60,7 +60,7 @@
 /* Private variables ---------------------------------------------------------*/
 /* Disk status */
 static volatile DSTATUS Stat = STA_NOINIT;
-static osMessageQId SDQueueID;
+static osMessageQueueId_t SDQueueID;
 /* Private function prototypes -----------------------------------------------*/
 static DSTATUS SD_CheckStatus(BYTE lun);
 DSTATUS SD_initialize (BYTE);
@@ -112,7 +112,7 @@ DSTATUS SD_initialize(BYTE lun)
    * check that the kernel has been started before continuing
    * as the osMessage API will fail otherwise
    */
-  if(osKernelRunning())
+  if(osKernelGetState() == osKernelRunning)
   {
 #if !defined(DISABLE_SD_INIT)
 
@@ -131,8 +131,9 @@ DSTATUS SD_initialize(BYTE lun)
 
     if (Stat != STA_NOINIT)
     {
-      osMessageQDef(SD_Queue, QUEUE_SIZE, uint16_t);
-      SDQueueID = osMessageCreate (osMessageQ(SD_Queue), NULL);
+      /* creation of SD_Queue */
+      SDQueueID = osMessageQueueNew (QUEUE_SIZE, sizeof(uint32_t), NULL);
+
     }
   }
 
@@ -160,7 +161,8 @@ DSTATUS SD_status(BYTE lun)
 DRESULT SD_read(BYTE lun, BYTE *buff, DWORD sector, UINT count)
 {
   DRESULT res = RES_ERROR;
-  osEvent event;
+  osStatus_t status;
+  uint32_t QueueMsg;
   uint32_t timer;
 #if (ENABLE_SD_DMA_CACHE_MAINTENANCE == 1)
   uint32_t alignedAddr;
@@ -171,15 +173,15 @@ DRESULT SD_read(BYTE lun, BYTE *buff, DWORD sector, UINT count)
                            count) == BSP_ERROR_NONE)
   {
     /* wait for a message from the queue or a timeout */
-    event = osMessageGet(SDQueueID, SD_TIMEOUT);
+    status = osMessageQueueGet(SDQueueID, &QueueMsg, NULL, SD_TIMEOUT);
 
-    if (event.status == osEventMessage)
+    if (status == osOK)
     {
-      if (event.value.v == READ_CPLT_MSG)
+      if (QueueMsg  == READ_CPLT_MSG)
       {
-        timer = osKernelSysTick() + SD_TIMEOUT;
+        timer = osKernelGetSysTimerCount() + SD_TIMEOUT;
         /* block until SDIO IP is ready or a timeout occur */
-        while(timer > osKernelSysTick())
+        while(timer > osKernelGetSysTimerCount())
         {
           if (BSP_SD_GetCardState(0) == SD_TRANSFER_OK)
           {
@@ -213,7 +215,8 @@ DRESULT SD_read(BYTE lun, BYTE *buff, DWORD sector, UINT count)
 #if _USE_WRITE == 1
 DRESULT SD_write(BYTE lun, const BYTE *buff, DWORD sector, UINT count)
 {
-  osEvent event;
+  osStatus_t status;
+  uint32_t QueueMsg;
   DRESULT res = RES_ERROR;
   uint32_t timer;
 
@@ -229,15 +232,15 @@ DRESULT SD_write(BYTE lun, const BYTE *buff, DWORD sector, UINT count)
                            count) == BSP_ERROR_NONE)
   {
     /* Get the message from the queue */
-    event = osMessageGet(SDQueueID, SD_TIMEOUT);
+    status = osMessageQueueGet(SDQueueID, &QueueMsg, NULL, SD_TIMEOUT);
 
-    if (event.status == osEventMessage)
+    if (status == osOK)
     {
-      if (event.value.v == WRITE_CPLT_MSG)
+      if (QueueMsg == WRITE_CPLT_MSG)
       {
-        timer = osKernelSysTick() + SD_TIMEOUT;
+        timer = osKernelGetSysTimerCount() + SD_TIMEOUT;
         /* block until SDIO IP is ready or a timeout occur */
-        while(timer > osKernelSysTick())
+        while(timer > osKernelGetSysTimerCount())
         {
           if (BSP_SD_GetCardState(0) == SD_TRANSFER_OK)
           {
@@ -318,7 +321,8 @@ void BSP_SD_WriteCpltCallback(uint32_t Instance)
    * No need to add an "osKernelRunning()" check here, as the SD_initialize()
    * is always called before any SD_Read()/SD_Write() call
    */
-   osMessagePut(SDQueueID, WRITE_CPLT_MSG, osWaitForever);
+   uint32_t QueueMsg = WRITE_CPLT_MSG;
+   osMessageQueuePut(SDQueueID, &QueueMsg, 0, 0);
 }
 
 /**
@@ -333,6 +337,7 @@ void BSP_SD_ReadCpltCallback(uint32_t Instance)
    * No need to add an "osKernelRunning()" check here, as the SD_initialize()
    * is always called before any SD_Read()/SD_Write() call
    */
-   osMessagePut(SDQueueID, READ_CPLT_MSG, osWaitForever);
+   uint32_t QueueMsg = READ_CPLT_MSG;
+   osMessageQueuePut(SDQueueID, &QueueMsg, 0, 0);
 }
 

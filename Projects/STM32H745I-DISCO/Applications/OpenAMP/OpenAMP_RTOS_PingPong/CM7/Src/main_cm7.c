@@ -37,13 +37,18 @@ static volatile int service_created;
 static volatile unsigned int received_data;
 static struct rpmsg_endpoint rp_endpoint;
 /* Extern variables ---------------------------------------------------------*/
-osSemaphoreId osSemaphore_ChannelCreation;
-osSemaphoreId osSemaphore_MessageReception;
-
+osSemaphoreId_t osSemaphore_ChannelCreation;
+osSemaphoreId_t osSemaphore_MessageReception;
+osThreadId_t Thread_PingPongHandle;
+static osThreadAttr_t attr = {
+                              .name = "Thread0",
+                              .priority = osPriorityNormal,
+                              .stack_size = appliSTACK_SIZE,
+                      };
 /* Private function prototypes -----------------------------------------------*/
 static void MPU_Config(void);
 static void SystemClock_Config(void);
-static void Thread_PingPong(void const *argument);
+static void Thread_PingPong(void *argument);
 /* Private functions ---------------------------------------------------------*/
 
 
@@ -64,7 +69,7 @@ unsigned int receive_message(void)
 
   while (received_data == -1U)
   {
-    status = osSemaphoreWait(osSemaphore_MessageReception , 0xffff);
+    status = osSemaphoreAcquire(osSemaphore_MessageReception , 0xffff);
 
     if (status != osOK)
       break;
@@ -134,19 +139,17 @@ int main(void)
   SystemClock_Config();
 
    BSP_LED_Init(LED_GREEN);
-  /* Add Cortex-M7 user application code here */
 
-  /* Define used semaphore */
-  osSemaphoreDef(CHN_CREAT);
-  osSemaphoreDef(MSG_RECPT);
+  /* Add Cortex-M7 user application code here */
   /* Create the semaphore */
-  osSemaphore_ChannelCreation  = osSemaphoreCreate(osSemaphore(CHN_CREAT) , 1);
-  osSemaphore_MessageReception = osSemaphoreCreate(osSemaphore(MSG_RECPT) , 1);
+  osSemaphore_ChannelCreation  = osSemaphoreNew(1U, 1U, NULL);
+  osSemaphore_MessageReception = osSemaphoreNew(1U, 1U, NULL);
 
   /* Create the Thread that toggle LED1 */
-  osThreadDef(Thread0, Thread_PingPong, osPriorityNormal, 0, appliSTACK_SIZE);
-  osThreadCreate(osThread(Thread0), NULL);
+  Thread_PingPongHandle = osThreadNew(Thread_PingPong, NULL, (const osThreadAttr_t *)&attr);
 
+  /* Init scheduler */
+  osKernelInitialize();
 
   /* Start scheduler */
   osKernelStart();
@@ -163,7 +166,7 @@ int main(void)
   * @param  argument: Not used
   * @retval None
   */
-static void Thread_PingPong(void const *argument)
+static void Thread_PingPong(void *argument)
 {
   int32_t status;
   int32_t timeout;

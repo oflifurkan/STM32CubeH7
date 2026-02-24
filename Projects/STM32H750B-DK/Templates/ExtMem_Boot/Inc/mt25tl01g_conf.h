@@ -39,7 +39,7 @@
 #define MT25TL01G_DUMMY_CYCLES_READ           8U
 /* Dummy cycles for DTR read mode */
 #define MT25TL01G_DUMMY_CYCLES_READ_DTR       6U
-#define MT25TL01G_DUMMY_CYCLES_READ_QUAD_DTR  6U
+#define MT25TL01G_DUMMY_CYCLES_READ_QUAD_DTR  8U
 
 #ifdef __cplusplus
 }

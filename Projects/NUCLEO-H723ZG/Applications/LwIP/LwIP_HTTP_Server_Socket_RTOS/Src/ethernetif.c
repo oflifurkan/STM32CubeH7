@@ -18,6 +18,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32h7xx_hal.h"
+#include "main.h"
 #include "lwip/timeouts.h"
 #include "netif/ethernet.h"
 #include "netif/etharp.h"
@@ -25,7 +26,7 @@
 #include "lwip/snmp.h"
 #include "lwip/tcpip.h"
 #include "ethernetif.h"
-#include "../Components/lan8742/lan8742.h"
+#include "lan8742.h"
 #include <string.h>
 #include "lwip/netifapi.h"
 
@@ -65,10 +66,14 @@
        to customize it please redefine ETH_TX_DESC_CNT in ETH GUI (Tx Descriptor Length)
        so that updated value will be generated in stm32xxxx_hal_conf.h
 
-  2.a. Rx Buffers number: ETH_RX_BUFFER_CNT must be greater than ETH_RX_DESC_CNT.
+  2.a. Rx Buffers number must be between ETH_RX_DESC_CNT and 2*ETH_RX_DESC_CNT
   2.b. Rx Buffers must have the same size: ETH_RX_BUFFER_SIZE, this value must
        passed to ETH DMA in the init field (heth.Init.RxBuffLen)
+  2.c  The RX Ruffers addresses and sizes must be properly defined to be aligned
+       to L1-CACHE line size (32 bytes).
 */
+
+/* Data Type Definitions */
 typedef enum
 {
   RX_ALLOC_OK       = 0x00,
@@ -94,7 +99,7 @@ ETH_DMADescTypeDef  DMATxDscrTab[ETH_TX_DESC_CNT]; /* Ethernet Tx DMA Descriptor
 __attribute__((section(".RxDescripSection"))) ETH_DMADescTypeDef  DMARxDscrTab[ETH_RX_DESC_CNT]; /* Ethernet Rx DMA Descriptors */
 __attribute__((section(".TxDescripSection"))) ETH_DMADescTypeDef  DMATxDscrTab[ETH_TX_DESC_CNT]; /* Ethernet Tx DMA Descriptors */
 
-#elif defined ( __GNUC__ ) /* GNU Compiler */
+#elif (defined ( __GNUC__ ) || defined ( __ARMCC_VERSION )) /* GNU Compiler */
 
 ETH_DMADescTypeDef DMARxDscrTab[ETH_RX_DESC_CNT] __attribute__((section(".RxDescripSection"))); /* Ethernet Rx DMA Descriptors */
 ETH_DMADescTypeDef DMATxDscrTab[ETH_TX_DESC_CNT] __attribute__((section(".TxDescripSection")));   /* Ethernet Tx DMA Descriptors */
@@ -111,6 +116,9 @@ extern u8_t memp_memory_RX_POOL_base[];
 #elif defined ( __CC_ARM )  /* MDK ARM Compiler */
 __attribute__((section(".Rx_PoolSection"))) extern u8_t memp_memory_RX_POOL_base[];
 
+#elif defined ( __ARMCC_VERSION ) /* ARM 6 Compiler */
+__attribute__((section(".Rx_PoolSection"))) u8_t memp_memory_RX_POOL_base[];
+
 #elif defined ( __GNUC__ ) /* GNU Compiler */
 __attribute__((section(".Rx_PoolSection"))) extern u8_t memp_memory_RX_POOL_base[];
 
@@ -119,18 +127,29 @@ __attribute__((section(".Rx_PoolSection"))) extern u8_t memp_memory_RX_POOL_base
 /* Variable Definitions */
 static RxAllocStatusTypeDef RxAllocStatus;
 
-osSemaphoreId RxPktSemaphore = NULL; /* Semaphore to signal incoming packets */
+osThreadId_t EthIfHandle;
+const osSemaphoreAttr_t RxPktSemaphore_attributes = {
+  .name = "RxPktSemaphore"
+};
+osThreadId_t EthIfThread;       /* Handle of the interface thread */
+const osThreadAttr_t EthIf_attributes = {
+  .name = "EthIf",
+  .priority = (osPriority_t) osPriorityRealtime,
+  .stack_size = 6 * INTERFACE_THREAD_STACK_SIZE
+};
 
-TaskHandle_t EthIfThread;       /* Handle of the interface thread */
-osSemaphoreId TxPktSemaphore = NULL;   /* Semaphore to signal transmit packet complete */
+const osSemaphoreAttr_t TxPktSemaphore_attributes = {
+  .name = "TxPktSemaphore"
+};
+/* USER CODE END 2 */
+
+osSemaphoreId_t RxPktSemaphore = NULL;   /* Semaphore to signal incoming packets */
+osSemaphoreId_t TxPktSemaphore = NULL;   /* Semaphore to signal transmit packet complete */
 
 /* Global Ethernet handle */
 ETH_HandleTypeDef EthHandle;
-ETH_TxPacketConfig TxConfig;
-
 
 /* Private function prototypes -----------------------------------------------*/
-extern void Error_Handler(void);
 void ethernetif_input( void* argument );
 int32_t ETH_PHY_IO_Init(void);
 int32_t ETH_PHY_IO_DeInit (void);
@@ -159,11 +178,11 @@ void pbuf_free_custom(struct pbuf *p);
   */
 static void low_level_init(struct netif *netif)
 {
+  HAL_StatusTypeDef hal_eth_init_status = HAL_OK;
   uint32_t duplex, speed = 0U;
   int32_t PHYLinkState = 0U;
   ETH_MACConfigTypeDef MACConf = {0};
   uint8_t macaddress[6]= {ETH_MAC_ADDR0, ETH_MAC_ADDR1, ETH_MAC_ADDR2, ETH_MAC_ADDR3, ETH_MAC_ADDR4, ETH_MAC_ADDR5};
-  osThreadAttr_t attributes;
   EthHandle.Instance = ETH;
   EthHandle.Init.MACAddr = macaddress;
   EthHandle.Init.MediaInterface = HAL_ETH_RMII_MODE;
@@ -172,8 +191,9 @@ static void low_level_init(struct netif *netif)
   EthHandle.Init.RxBuffLen = ETH_RX_BUFFER_SIZE;
 
   /* configure ethernet peripheral (GPIOs, clocks, MAC, DMA) */
-  HAL_ETH_Init(&EthHandle);
-
+  hal_eth_init_status = HAL_ETH_Init(&EthHandle);
+  
+#if LWIP_ARP || LWIP_ETHERNET
   /* set MAC hardware address length */
   netif->hwaddr_len = ETH_HWADDR_LEN;
 
@@ -196,23 +216,14 @@ static void low_level_init(struct netif *netif)
   /* Initialize the RX POOL */
   LWIP_MEMPOOL_INIT(RX_POOL);
 
-  /* Set Tx packet config common parameters */
-  memset(&TxConfig, 0 , sizeof(ETH_TxPacketConfig));
-  TxConfig.Attributes = ETH_TX_PACKETS_FEATURES_CSUM | ETH_TX_PACKETS_FEATURES_CRCPAD;
-  TxConfig.ChecksumCtrl = ETH_CHECKSUM_IPHDR_PAYLOAD_INSERT_PHDR_CALC;
-  TxConfig.CRCPadCtrl = ETH_CRC_PAD_INSERT;
-
-  /* create a binary semaphore used for informing ethernetif of frame reception */
+  /* Create a binary semaphore used for informing ethernetif of frame reception */
   RxPktSemaphore = osSemaphoreNew(1, 0, NULL);
+
   /* create a binary semaphore used for informing ethernetif of frame transmission */
-  TxPktSemaphore =  osSemaphoreNew(1, 0, NULL);
+  TxPktSemaphore = osSemaphoreNew(1, 0, NULL);
 
   /* create the task that handles the ETH_MAC */
-  memset(&attributes,0x0,sizeof(osThreadAttr_t));
-  attributes.name = "EthIf";
-  attributes.stack_size = 4 * INTERFACE_THREAD_STACK_SIZE;
-  attributes.priority = osPriorityRealtime;
-  osThreadNew(ethernetif_input, netif, &attributes);
+  EthIfHandle = osThreadNew(ethernetif_input, netif, &EthIf_attributes);
 
   /* Set PHY IO functions */
   LAN8742_RegisterBusIO(&LAN8742, &LAN8742_IOCtx);
@@ -225,39 +236,41 @@ static void low_level_init(struct netif *netif)
     return;
   }
 
-  PHYLinkState = LAN8742_GetLinkState(&LAN8742);
+  if (hal_eth_init_status == HAL_OK)
+  {
+    PHYLinkState = LAN8742_GetLinkState(&LAN8742);
 
-  /* Get link state */
-  if(PHYLinkState <= LAN8742_STATUS_LINK_DOWN)
-  {
-    netif_set_link_down(netif);
-    netif_set_down(netif);
-  }
-  else
-  {
-    switch (PHYLinkState)
+    /* Get link state */
+    if(PHYLinkState <= LAN8742_STATUS_LINK_DOWN)
     {
-    case LAN8742_STATUS_100MBITS_FULLDUPLEX:
-      duplex = ETH_FULLDUPLEX_MODE;
-      speed = ETH_SPEED_100M;
-      break;
-    case LAN8742_STATUS_100MBITS_HALFDUPLEX:
-      duplex = ETH_HALFDUPLEX_MODE;
-      speed = ETH_SPEED_100M;
-      break;
-    case LAN8742_STATUS_10MBITS_FULLDUPLEX:
-      duplex = ETH_FULLDUPLEX_MODE;
-      speed = ETH_SPEED_10M;
-      break;
-    case LAN8742_STATUS_10MBITS_HALFDUPLEX:
-      duplex = ETH_HALFDUPLEX_MODE;
-      speed = ETH_SPEED_10M;
-      break;
-    default:
-      duplex = ETH_FULLDUPLEX_MODE;
-      speed = ETH_SPEED_100M;
-      break;
+      netif_set_link_down(netif);
+      netif_set_down(netif);
     }
+    else
+    {
+      switch (PHYLinkState)
+      {
+      case LAN8742_STATUS_100MBITS_FULLDUPLEX:
+        duplex = ETH_FULLDUPLEX_MODE;
+        speed = ETH_SPEED_100M;
+        break;
+      case LAN8742_STATUS_100MBITS_HALFDUPLEX:
+        duplex = ETH_HALFDUPLEX_MODE;
+        speed = ETH_SPEED_100M;
+        break;
+      case LAN8742_STATUS_10MBITS_FULLDUPLEX:
+        duplex = ETH_FULLDUPLEX_MODE;
+        speed = ETH_SPEED_10M;
+        break;
+      case LAN8742_STATUS_10MBITS_HALFDUPLEX:
+        duplex = ETH_HALFDUPLEX_MODE;
+        speed = ETH_SPEED_10M;
+        break;
+      default:
+        duplex = ETH_FULLDUPLEX_MODE;
+        speed = ETH_SPEED_100M;
+        break;
+      }
 
     /* Get MAC Config MAC */
     HAL_ETH_GetMACConfig(&EthHandle, &MACConf);
@@ -267,7 +280,14 @@ static void low_level_init(struct netif *netif)
     HAL_ETH_Start_IT(&EthHandle);
     netif_set_up(netif);
     netif_set_link_up(netif);
+    }
+
   }
+  else
+  {
+    Error_Handler();
+  }
+#endif /* LWIP_ARP || LWIP_ETHERNET */
 }
 
 /**
@@ -288,8 +308,15 @@ static err_t low_level_output(struct netif *netif, struct pbuf *p)
   struct pbuf *q = NULL;
   err_t errval = ERR_OK;
   ETH_BufferTypeDef Txbuffer[ETH_TX_DESC_CNT];
+  ETH_TxPacketConfigTypeDef TxConfig;
 
   memset(Txbuffer, 0 , ETH_TX_DESC_CNT*sizeof(ETH_BufferTypeDef));
+
+  /* Set Tx packet config common parameters */
+  memset(&TxConfig, 0 , sizeof(ETH_TxPacketConfig));
+  TxConfig.Attributes = ETH_TX_PACKETS_FEATURES_CSUM | ETH_TX_PACKETS_FEATURES_CRCPAD;
+  TxConfig.ChecksumCtrl = ETH_CHECKSUM_IPHDR_PAYLOAD_INSERT_PHDR_CALC;
+  TxConfig.CRCPadCtrl = ETH_CRC_PAD_INSERT;
 
   for(q = p; q != NULL; q = q->next)
   {
@@ -432,7 +459,17 @@ err_t ethernetif_init(struct netif *netif)
    * You can instead declare your own function an call etharp_output()
    * from it if you have to do some checks before sending (e.g. if link
    * is available...) */
+
+#if LWIP_IPV4
+#if LWIP_ARP || LWIP_ETHERNET
+#if LWIP_ARP
   netif->output = etharp_output;
+#else
+  /* The user should write its own code in low_level_output_arp_off function */
+  netif->output = low_level_output_arp_off;
+#endif /* LWIP_ARP */
+#endif /* LWIP_ARP || LWIP_ETHERNET */
+#endif /* LWIP_IPV4 */
   netif->linkoutput = low_level_output;
 
   /* initialize the hardware */

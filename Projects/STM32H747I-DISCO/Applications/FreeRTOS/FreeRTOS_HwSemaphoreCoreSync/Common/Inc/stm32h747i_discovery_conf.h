@@ -21,7 +21,7 @@
 #define STM32H747I_DISCO_CONF_H
 
 #ifdef __cplusplus
- extern "C" {
+extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
@@ -42,7 +42,6 @@
 #define USE_CAMERA_SENSOR_OV9655            1U
 /* Audio codecs defines */
 #define USE_AUDIO_CODEC_WM8994              1U
-
 
 /* Default Audio IN internal buffer size */
 #define DEFAULT_AUDIO_IN_BUFFER_SIZE        64U

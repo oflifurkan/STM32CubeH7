@@ -24,12 +24,13 @@
 /* Includes ------------------------------------------------------------------*/
 #include "stm32h7xx_hal.h"
 #include "openamp.h"
-#include "cmsis_os.h"
+#include "cmsis_os2.h"
 #include "stm32h747i_discovery.h"
+#include "FreeRTOS.h"
 
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
-#define appliSTACK_SIZE configMINIMAL_STACK_SIZE *2
+#define appliSTACK_SIZE configMINIMAL_STACK_SIZE *4
 /* Exported functions ------------------------------------------------------- */
 void Error_Handler(void);
 

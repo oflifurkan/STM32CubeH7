@@ -42,7 +42,7 @@ the DHCP process (#define LWIP_DHCP to 1 in lwipopts.h)
 
 At the beginning of the main program the HAL_Init() function is called to reset
 all the peripherals, initialize the Flash interface and the systick.
-The SystemClock_Config() function is used to configure the system clock for STM32H723xx Devices :
+The SystemClock_Config() function is used to configure the system clock for STM32H735xx Devices :
 The CPU at 520 MHz
 The HCLK for D1 Domain AXI peripherals, D2 Domain AHB peripherals and D3 Domain AHB  peripherals at 260 MHz.
 The APB clock dividers for D1 Domain APB3 peripherals, D2 Domain APB1 and APB2 peripherals and D3 Domain APB4 peripherals to run at 130 MHz.
@@ -107,7 +107,7 @@ Connectivity, LwIP, Ethernet, HTTP Server, Socket, TCP/IP, FreeRTOS, DHCP
 
 @par Hardware and Software environment
 
-  - This application runs on STM32H723xx devices.
+  - This application runs on STM32H735xx devices.
     
   - This application has been tested with the following environments:
      - STM32H735G-DK board

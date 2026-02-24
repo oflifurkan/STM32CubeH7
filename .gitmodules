@@ -198,3 +198,7 @@
 	path = Middlewares/ST/STM32_USB_Host_Library
 	url = https://github.com/STMicroelectronics/stm32-mw-usb-host
 	branch = master
+[submodule "Drivers/BSP/Components/exc80w32"]
+	path = Drivers/BSP/Components/exc80w32
+	url = https://github.com/STMicroelectronics/stm32-exc80w32.git
+	branch = main

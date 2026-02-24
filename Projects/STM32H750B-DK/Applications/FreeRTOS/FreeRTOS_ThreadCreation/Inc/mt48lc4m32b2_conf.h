@@ -22,16 +22,16 @@
 #define mt48lc4m32b2_CONF_H
 
 #ifdef __cplusplus
- extern "C" {
+extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32h7xx_hal.h"
-   
+
 /** @addtogroup BSP
   * @{
   */
-  
+
 /** @addtogroup Components
   * @{
   */
@@ -42,9 +42,9 @@
 
 /** @addtogroup mt48lc4m32b2_Exported_Constants
   * @{
-  */  
-#define REFRESH_COUNT                    ((uint32_t)0x0603)   /* SDRAM refresh counter (100Mhz SD clock) */
-   
+  */
+#define REFRESH_COUNT                    ((uint32_t)0x0603)  /* SDRAM refresh counter (100Mhz SD clock) */
+
 #define MT48LC4M32B2_TIMEOUT             ((uint32_t)0xFFFF)
 
 #ifdef __cplusplus

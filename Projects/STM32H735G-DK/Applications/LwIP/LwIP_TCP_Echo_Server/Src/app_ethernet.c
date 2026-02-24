@@ -17,6 +17,7 @@
   */
 
 /* Includes ------------------------------------------------------------------*/
+
 #include "lwip/opt.h"
 #include "main.h"
 #if LWIP_DHCP
@@ -200,5 +201,4 @@ void DHCP_Periodic_Handle(struct netif *netif)
   }
 }
 #endif
-
 

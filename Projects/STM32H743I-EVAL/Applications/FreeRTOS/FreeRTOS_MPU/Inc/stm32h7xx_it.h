@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * @file    FreeRTOS/FreeRTOS_MPU/Inc/stm32h7xx_it.h
-  * @author  MCD Application Team  
+  * @author  MCD Application Team
   * @brief   This file contains the headers of the interrupt handlers.
   ******************************************************************************
   * @attention
@@ -36,7 +36,6 @@ void MemManage_Handler(void);
 void BusFault_Handler(void);
 void UsageFault_Handler(void);
 void DebugMon_Handler(void);
-void SysTick_Handler(void);
 
 #ifdef __cplusplus
 }

@@ -20,7 +20,8 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "cmsis_os.h"
+#include "cmsis_os2.h"
+#include "FreeRTOS.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -53,7 +54,7 @@ static osThreadAttr_t lowattr = {
                         .priority = osPriorityLow,
                         .stack_size = configMINIMAL_STACK_SIZE,
                       };
-osSemaphoreId_t osSemaphoreHandle;				 
+osSemaphoreId_t osSemaphoreHandle;
 /* USER CODE BEGIN PV */
 __IO uint32_t OsStatus = 0;
 /* USER CODE END PV */
@@ -79,7 +80,7 @@ static void SemaphoreThread2(void *argument);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-  
+
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -109,7 +110,7 @@ int main(void)
   /* USER CODE END 2 */
   osKernelInitialize();
   /* USER CODE BEGIN RTOS_MUTEX */
-  
+
   /* USER CODE END RTOS_MUTEX */
 
   /* Create the semaphores(s) */
@@ -117,15 +118,15 @@ int main(void)
   osSemaphoreHandle = osSemaphoreNew(1U, 1U, NULL);
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */
-  
+
   /* USER CODE END RTOS_SEMAPHORES */
 
   /* USER CODE BEGIN RTOS_TIMERS */
-  
+
   /* USER CODE END RTOS_TIMERS */
 
   /* Create the thread(s) */
-  
+
   /* definition and creation of SEM_Thread1 */
   lowattr.name = "SEM_Thread1";
   SEM_Thread1Handle = osThreadNew(SemaphoreThread1, osSemaphoreHandle, (const osThreadAttr_t *)&lowattr);
@@ -134,13 +135,12 @@ int main(void)
   SEM_Thread2Handle = osThreadNew(SemaphoreThread2, osSemaphoreHandle, (const osThreadAttr_t *)&idleattr);
 
   /* USER CODE BEGIN RTOS_THREADS */
-  
+
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_QUEUES */
-  
-  /* USER CODE END RTOS_QUEUES */
 
+  /* USER CODE END RTOS_QUEUES */
 
   /* Start scheduler */
   osKernelStart();
@@ -242,7 +242,7 @@ static void SystemClock_Config(void)
 /* USER CODE BEGIN Header_SemaphoreThread1 */
 /**
   * @brief  Function implementing the SEM_Thread1 thread.
-  * @param  argument: Not used 
+  * @param  argument: Not used
   * @retval None
   */
 /* USER CODE END Header_SemaphoreThread1 */
@@ -279,20 +279,20 @@ static void SemaphoreThread1(void *argument)
         /* Release the semaphore */
         OsStatus = osSemaphoreRelease(semaphore);
 
-        /* Suspend ourseleves to execute thread 2 (lower priority)  */
+        /* Suspend ourseleves to execute thread 2 (lower priority) */
         OsStatus = osThreadSuspend(SEM_Thread1Handle);
       }
     }
   }
-  /* USER CODE END 5 */ 
+  /* USER CODE END 5 */
 }
 
 /* USER CODE BEGIN Header_SemaphoreThread2 */
 /**
-* @brief Function implementing the SEM_Thread2 thread.
-* @param argument: Not used
-* @retval None
-*/
+  * @brief Function implementing the SEM_Thread2 thread.
+  * @param argument: Not used
+  * @retval None
+  */
 /* USER CODE END Header_SemaphoreThread2 */
 static void SemaphoreThread2(void *argument)
 {
@@ -306,12 +306,12 @@ static void SemaphoreThread2(void *argument)
     {
     OsStatus = osSemaphoreAcquire(semaphore, osWaitForever);
       {
-        /* Resume Thread 1 (higher priority)*/
+        /* Resume Thread 1 (higher priority) */
         OsStatus = osThreadResume(SEM_Thread1Handle);
 
         count = osKernelGetTickCount() + 5000;
 
-        /* Toggle LED2 every 200 ms for 5 seconds*/
+        /* Toggle LED2 every 200 ms for 5 seconds */
         while (count > osKernelGetTickCount())
         {
           BSP_LED_Toggle(LED2);
@@ -322,7 +322,7 @@ static void SemaphoreThread2(void *argument)
         /* Turn off LED2 */
         BSP_LED_Off(LED2);
 
-        /* Release the semaphore to unblock Thread 1 (higher priority)  */
+        /* Release the semaphore to unblock Thread 1 (higher priority) */
         OsStatus = osSemaphoreRelease(semaphore);
       }
     }
@@ -338,10 +338,13 @@ void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
- 
+  /* Infinite loop */
+  while (1)
+  {
+
+  }
   /* USER CODE END Error_Handler_Debug */
 }
-
 
 /**
   * @brief  Configure the MPU attributes
@@ -374,7 +377,7 @@ static void MPU_Config(void)
   HAL_MPU_Enable(MPU_PRIVILEGED_DEFAULT);
 }
 
-#ifdef  USE_FULL_ASSERT
+#ifdef USE_FULL_ASSERT
 
 /**
   * @brief  Reports the name of the source file and the source line number
@@ -391,7 +394,9 @@ void assert_failed(uint8_t* file, uint32_t line)
 
   /* Infinite loop */
   while (1)
-  {}
+  {
+
+  }
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */

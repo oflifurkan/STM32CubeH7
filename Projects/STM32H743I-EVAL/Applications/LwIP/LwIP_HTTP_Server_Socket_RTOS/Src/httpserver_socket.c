@@ -24,7 +24,9 @@
 #include "lwip/apps/fs.h"
 #include "string.h"
 #include "httpserver_socket.h"
-#include "cmsis_os.h"
+#include "cmsis_os2.h"
+#include "FreeRTOS.h"
+#include "task.h"
 
 #include <stdio.h>
 
@@ -138,7 +140,7 @@ static const unsigned char PAGE_START[] = {
 0x62,0x65,0x72,0x20,0x6f,0x66,0x20,0x70,0x61,0x67,0x65,0x20,0x68,0x69,0x74,0x73,
 0x3a,0x26,0x6e,0x62,0x73,0x70,0x3b,0x0d,0x0a,0x0d,0x0a,0x3c,0x2f,0x73,0x70,0x61,
 0x6e,0x3e,0x3c,0x2f,0x73,0x6d,0x61,0x6c,0x6c,0x3e,0x0d,0x0a,0x3c,0x2f,0x62,0x6f,
-0x64,0x79,0x3e,0x3c,0x2f,0x68,0x74,0x6d,0x6c,0x3e, 0
+0x64,0x79,0x3e,0x3c,0x2f,0x68,0x74,0x6d,0x6c,0x3e,0
 };
 
 /* Private function prototypes -----------------------------------------------*/
@@ -250,7 +252,7 @@ static void http_server_socket_thread(void *arg)
   */
 void http_server_socket_init()
 {
-  sys_thread_new("HTTP", http_server_socket_thread, NULL, DEFAULT_THREAD_STACKSIZE * 2, WEBSERVER_THREAD_PRIO);
+  sys_thread_new("HTTP", http_server_socket_thread, NULL, DEFAULT_THREAD_STACKSIZE * 4, WEBSERVER_THREAD_PRIO);
 }
 
 /**
@@ -270,13 +272,13 @@ void DynWebPage(int conn)
   nPageHits++;
   sprintf( pagehits, "%d", (int)nPageHits );
   strcat(PAGE_BODY, pagehits);
-  strcat((char *) PAGE_BODY, "<pre><br>Name          State  Priority  Stack   Num" );
-  strcat((char *) PAGE_BODY, "<br>---------------------------------------------<br>"); 
+  strcat((char *) PAGE_BODY, "<pre><br>Name          State  Priority  Stack  Num" );
+  strcat((char *) PAGE_BODY, "<br>---------------------------------------------<br>");
     
   /* The list of tasks and their status */
-  osThreadList((unsigned char *)(PAGE_BODY + strlen(PAGE_BODY)));
-  strcat((char *) PAGE_BODY, "<br><br>---------------------------------------------"); 
-  strcat((char *) PAGE_BODY, "<br>B : Blocked, R : Ready, D : Deleted, S : Suspended<br>");
+  vTaskList((char *)(PAGE_BODY + strlen(PAGE_BODY)));
+  strcat((char *) PAGE_BODY, "<br><br>-------------------------------------------"); 
+  strcat((char *)PAGE_BODY, "<br>X : Running, B : Blocked, R : Ready, D : Deleted, S : Suspended<br>");
   
   /* Send the dynamically generated page */
   write(conn, PAGE_START, strlen((char*)PAGE_START));

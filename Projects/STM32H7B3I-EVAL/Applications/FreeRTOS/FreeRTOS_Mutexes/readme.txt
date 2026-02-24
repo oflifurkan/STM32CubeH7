@@ -1,6 +1,6 @@
 /**
   @page FreeRTOS_Mutexes FreeRTOS Mutexes application
- 
+
   @verbatim
   ******************************************************************************
   * @file    FreeRTOS/FreeRTOS_Mutexes/readme.txt
@@ -23,31 +23,31 @@
 
 How to use mutexes with CMSIS RTOS API.
 
-This application creates three threads, with different priorities, that access the 
+This application creates three threads, with different priorities, that access the
 same mutex, as described below:
 
-MutexHighPriorityThread() has the highest priority so executes 
-first and grabs the mutex and sleeps for a short period to let the lower 
+MutexHighPriorityThread() has the highest priority so executes
+first and grabs the mutex and sleeps for a short period to let the lower
 priority threads execute.  When it has completed its demo functionality
-it gives the mutex back before suspending itself. 
+it gives the mutex back before suspending itself.
 At that point, LED1 toggles.
- 
+
 MutexMediumPriorityThread() attempts to access the mutex by performing
-a blocking 'wait'.  This thread blocks when the mutex is already taken 
-by the high priority thread. It does not unblock until the highest 
-priority thread  has released the mutex, and it does not actually run until 
+a blocking 'wait'. This thread blocks when the mutex is already taken
+by the high priority thread. It does not unblock until the highest
+priority thread  has released the mutex, and it does not actually run until
 the highest priority thread has suspended itself.
 When it eventually does obtain the mutex all it does is give the mutex back
 prior to also suspending itself.
 At this point both the high and medium priority threads are suspended and LED3 toggles.
 
-MutexLowPriorityThread() runs at the idle priority.  It spins round
-a tight loop attempting to obtain the mutex with a non-blocking call.  As
+MutexLowPriorityThread() runs at the idle priority. It spins round
+a tight loop attempting to obtain the mutex with a non-blocking call. As
 the lowest priority thread it will not successfully obtain the mutex until
-both high and medium priority threads are suspended.  Once it eventually 
+both high and medium priority threads are suspended. Once it eventually
 does obtains the mutex, it first resumes both suspended threads (and LED4 toggles
 at that time) prior to giving the mutex back - resulting in the low priority 
-thread temporarily inheriting the highest thread priority.       
+thread temporarily inheriting the highest thread priority.
 
 In case of error, LED2 toggles.
 
@@ -64,7 +64,7 @@ The following variables can be displayed on the debugger via LiveWatch:
       the peripheral interrupt. Otherwise the caller ISR process will be blocked.
       To change the HAL time base interrupt priority you have to use HAL_NVIC_SetPriority()
       function.
- 
+
 @note The application needs to ensure that the HAL time base is always set to 1 millisecond
       to have correct HAL operation.
 
@@ -72,7 +72,7 @@ The following variables can be displayed on the debugger via LiveWatch:
       by the Cortex M7 and the MDMA), no need for cache maintenance when the Cortex M7 and the MDMA access these RAMs.
       If the application needs to use DMA(or other masters) based access or requires more RAM, then the user has to:
               - Use a non TCM SRAM. (example : CD AXI-SRAM @ 0x24000000)
-              - Add a cache maintenance mechanism to ensure the cache coherence between CPU and other masters(DMAs,DMA2D,LTDC,MDMA).
+              - Add a cache maintenance mechanism to ensure the cache coherence between CPU and other masters (DMAs,DMA2D,LTDC,MDMA).
               - The addresses and the size of cacheable buffers (shared between CPU and other masters)
                 must be properly defined to be aligned to L1-CACHE line size (32 bytes).
 
@@ -84,7 +84,7 @@ The following variables can be displayed on the debugger via LiveWatch:
 @note The FreeRTOS heap size configTOTAL_HEAP_SIZE defined in FreeRTOSConfig.h is set accordingly to the 
       OS resources memory requirements of the application with +10% margin and rounded to the upper Kbyte boundary.
 
-For more details about FreeRTOS implementation on STM32Cube, please refer to UM1722 "Developing Applications 
+For more details about FreeRTOS implementation on STM32Cube, please refer to UM1722 "Developing Applications
 on STM32Cube with RTOS".
 
 @par Keywords
@@ -101,7 +101,7 @@ RTOS, FreeRTOS, Threading, Mutexes
     - FreeRTOS/FreeRTOS_Mutexes/Inc/stm32h7xx_hal_conf.h         HAL Library Configuration file
     - FreeRTOS/FreeRTOS_Mutexes/Inc/stm32h7xx_it.h               Interrupt handlers header file
     - FreeRTOS/FreeRTOS_Mutexes/Inc/FreeRTOSConfig.h             FreeRTOS Configuration file
-    - FreeRTOS/FreeRTOS_Mutexes/Inc/stm32h7b3i_eval_conf.h    BSP configuration file
+    - FreeRTOS/FreeRTOS_Mutexes/Inc/stm32h7b3i_eval_conf.h       BSP configuration file
 
 @par Hardware and Software environment
 
@@ -110,13 +110,11 @@ RTOS, FreeRTOS, Threading, Mutexes
   - This application has been tested with STM32H7B3I-EVAL board and can be
     easily tailored to any other supported device and development board.
 
-
 @par How to use it ?
 
 In order to make the program work, you must do the following:
- - Open your preferred toolchain 
+ - Open your preferred toolchain
  - Rebuild all files and load your image into target memory
  - Run the example
- 
 
- */
+*/

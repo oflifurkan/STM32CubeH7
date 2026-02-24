@@ -21,7 +21,7 @@
 
 #include "lwip/err.h"
 #include "lwip/netif.h"
-#include "cmsis_os.h"
+#include "cmsis_os2.h"
 
 /* Exported types ------------------------------------------------------------*/
 /* Structure that include link thread parameters */

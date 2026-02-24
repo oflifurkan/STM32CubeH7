@@ -32,12 +32,12 @@ enumerated as a HID device using the native PC Host HID driver to which the STM3
 board is connected, in order to emulate the Mouse directions using "User" button mounted on the
 STM32H750B_DISCO board (Press board "User" button to move the PC mouse).
 
-At the beginning of the main program the HAL_Init() function is called to reset 
+At the beginning of the main program the HAL_Init() function is called to reset
 all the peripherals, initialize the Flash interface and the systick.
-The SystemClock_Config() function is used to configure the system clock for STM32H750xx Devices :
+The SystemClock_Config() function is used to configure the system clock for STM32H750xx Devices:
 The CPU at 400MHz 
 The HCLK for D1 Domain AXI and AHB3 peripherals , D2 Domain AHB1/AHB2 peripherals and D3 Domain AHB4  peripherals at 200MHz.
-The APB clock dividers for D1 Domain APB3 peripherals, D2 Domain APB1 and APB2 peripherals and D3 Domain APB4 peripherals to  run at 100MHz. 
+The APB clock dividers for D1 Domain APB3 peripherals, D2 Domain APB1 and APB2 peripherals and D3 Domain APB4 peripherals to run at 100MHz.
 
 The Full Speed (FS) USB module uses
 internally a 48-MHz clock which is coming from a specific output of two PLLs: main PLL1 or PLL3.
@@ -70,7 +70,6 @@ To manually enable the wake from standby option for the USB mouse, proceed as fo
 
 For more details about the STM32Cube USB Device library, please refer to UM1734
 "STM32Cube USB Device library".
-
 
 @par USB Library Configuration
 
@@ -123,32 +122,35 @@ Connectivity, USB_Device, USB, HID, Full Speed, Mouse, Joystick, Button, Remote 
 
 @par How to use it ? :
 
-In order to make the program work, you must do the following :
+To configure STM32CubeIDE Debug Configuration, you must do the following:
 
-  1. Select required configuration in memory.h in Templates\ExtMem_Boot\Inc template.
-     The default configuration is the right one: 
-     - DATA_AREA set to USE_INTERNAL_SRAM
-     - CODE_AREA set to USE_QSPI
-  2. Program the internal Flash with the ExtMem_Boot (see below).
-  3. Program the external memory with this application (see below).
-  4. Start debugging user example or reset for free running.
+  1. Upload the ExtMem_Boot template
+  2. Add the adequate external loader (MT25TL01G_STM32H750B-DISCO file) in Project -> Debugger Configuration -> External Loaders.
+  3. Add in the startup the ExtMem_Boot in Project->Debugger Configuration
+  4. Move up the application in the startup
 
-In order to load the ExtMem_Boot code :
-   - Open your preferred toolchain :
-      - Open the Project
-      - Rebuild all files
-      - Load project image
-      
-In order to load this application to the external memory :
- - Open your preferred toolchain 
- - Rebuild all files. 
- - Run & debug the program:
-   - Using EWARM or MDK-ARM : Load project image from the IDE: Project->Debug
-   - Using STM32CubeIDE  :
-       - Open the STM32CubeProgrammer tool
-       - Select the QSPI external flash loader "MT25TL01G_STM32H750B-DISCO" 
-       - From Erasing & Programming menu, browse and open the output binary file relative to this application
-       - Load the file into the external QSPI flash using "Start Programming" at the address APPLICATION_ADDRESS (0x90000000)
+In order to make the program work, you must do the following:
 
+  1. Upload the template ExtMem_Boot
+  2. Program the internal Flash with the ExtMem_Boot.
+  3. Program the external memory with this application.
+  4. Start debugging this application or reset the board for free running.
 
- */
+  * In order to load the ExtMem_Boot code:
+    - Open your preferred toolchain:
+    - Open the Project
+    - Rebuild all files
+    - Load project image
+
+  * In order to load the application to the external Flash memory:
+
+    1. Select required configuration in memory.h in Templates\ExtMem_Boot\Inc template.
+       The default configuration is:
+       - DATA_AREA set to USE_INTERNAL_SRAM
+       - CODE_AREA set to USE_QSPI
+    2. Open your preferred toolchain
+       - Open the Project
+       - Rebuild all files
+       - Run & debug the program
+
+*/

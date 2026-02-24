@@ -1,5 +1,5 @@
 /*
- * FreeRTOS Kernel V10.0.0
+ * FreeRTOS Kernel V10.6.2
  * Copyright (C) 2017 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
@@ -36,7 +36,7 @@ overhead of message buffers. */
 #define mbaTASK_MESSAGE_BUFFER_SIZE ( 60 )
 
 /* A block time of 0 simply means, don't block. */
-#define mbaDONT_BLOCK       0
+#define mbaDONT_BLOCK 0
 #if defined ( __ICCARM__ )
 #pragma location = 0x38000000
 MessageBufferHandle_t xCoreMessageBuffer;
@@ -54,6 +54,13 @@ StaticStreamBuffer_t xStreamBufferStruct __attribute__((at(0x38000004)));
 /* Used to dimension the array used to hold the streams. */
 /* Defines the memory that will actually hold the streams within the stream buffer.*/
 static uint8_t ucStorageBuffer[ mbaTASK_MESSAGE_BUFFER_SIZE ]__attribute__((at(0x38000040)));
+#elif defined ( __ARMCC_VERSION )
+MessageBufferHandle_t xCoreMessageBuffer __attribute__((section(".RAM_D3_Z1"), used));
+/* The variable used to hold the stream buffer structure.*/
+StaticStreamBuffer_t xStreamBufferStruct __attribute__((section(".RAM_D3_Z2"), used));
+/* Used to dimension the array used to hold the streams. */
+/* Defines the memory that will actually hold the streams within the stream buffer.*/
+static uint8_t ucStorageBuffer[ mbaTASK_MESSAGE_BUFFER_SIZE ]__attribute__((section(".RAM_D3_Z3"), used));
 #elif defined ( __GNUC__ )
 MessageBufferHandle_t xCoreMessageBuffer __attribute__((section(".RAM_D3_Z1")));;
 /* The variable used to hold the stream buffer structure.*/

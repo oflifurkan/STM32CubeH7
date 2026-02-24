@@ -32,7 +32,7 @@
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/ 
 #define HSEM_ID_0 (0U) /* HW semaphore 0*/
-#define mainCHECK_TASK_PRIORITY			( configMAX_PRIORITIES - 2 )
+#define mainCHECK_TASK_PRIORITY ( configMAX_PRIORITIES - 2 )
 
 /* Private variables ---------------------------------------------------------*/
 
@@ -111,10 +111,10 @@ int main(void)
   HAL_HSEM_FastTake(HSEM_ID_0);
   /*Release HSEM in order to wakeup the CPU2(CM4) from stop mode*/
   HAL_HSEM_Release(HSEM_ID_0,0);
-  
+
   /* Start the check task */
   xTaskCreate( prvCheckTask, "Check", configMINIMAL_STACK_SIZE, NULL, mainCHECK_TASK_PRIORITY, NULL );
-  
+
   /* Start the Core 1 task */
   xTaskCreate( prvCore1Task, "AMPCore1", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY, NULL );		
 
@@ -251,7 +251,6 @@ static void prvCheckTask( void *pvParameters )
     }
   }
 }
-
 
 /* configUSE_STATIC_ALLOCATION is set to 1, so the application must provide an
 implementation of vApplicationGetIdleTaskMemory() to provide the memory that is

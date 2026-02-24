@@ -18,19 +18,30 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "cmsis_os.h"
+#include "cmsis_os2.h"
+#include "FreeRTOS.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 #define HSEM_ID_0 (0U) /* HW semaphore 0*/
-#define semtstSTACK_SIZE configMINIMAL_STACK_SIZE
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-osSemaphoreId osSemaphore;
+/* Definitions for osSemaphore */
+osSemaphoreId_t osSemaphoreHandle;
+const osSemaphoreAttr_t osSemaphore_attributes = {
+  .name = "osSemaphore"
+};
+
+osThreadId_t SEM_ThreadHandle;
+const osThreadAttr_t SEM_Thread_attributes = {
+  .name = "SEM_Thread",
+  .priority = (osPriority_t) osPriorityNormal,
+  .stack_size = 128 * 4
+};
 
 /* Private function prototypes -----------------------------------------------*/
 static void MPU_Config(void);
-static void CORE1_SemaphoreCoreSync(void const *argument);
+static void CORE1_SemaphoreCoreSync(void *argument);
 static void SystemClock_Config(void);
 static void CPU_CACHE_Enable(void);
 static void Error_Handler(void);
@@ -84,9 +95,9 @@ int main(void)
 
   /*Take HSEM */
   HAL_HSEM_FastTake(HSEM_ID_0);   
-  /*Release HSEM in order to notify the CPU2(CM4)*/  	
+  /*Release HSEM in order to notify the CPU2(CM4)*/
   HAL_HSEM_Release(HSEM_ID_0,0);
-	
+
   timeout = 0xFFFF;
   while((__HAL_RCC_GET_FLAG(RCC_FLAG_D2CKRDY) == RESET) && (timeout-- > 0));
   if ( timeout < 0 )
@@ -94,17 +105,33 @@ int main(void)
     Error_Handler();
   }
 
-
-   /* Add Cortex-M7 user application code here */ 
+   /* Add Cortex-M7 user application code here */
   /* Configure LED1 */
   BSP_LED_Init(LED1);
 
+  /* Init scheduler */
+  osKernelInitialize();
 
-  /* Create the Thread that toggle LED1 */
-  osThreadDef(CORE1_Thread, CORE1_SemaphoreCoreSync, osPriorityNormal, 0, semtstSTACK_SIZE);
-  osThreadCreate(osThread(CORE1_Thread), (void *) osSemaphore); 
+  /* Create the semaphores(s) */
+  /* creation of osSemaphore */
+  osSemaphoreHandle = osSemaphoreNew(1, 1, &osSemaphore_attributes);
 
-  
+  /* USER CODE BEGIN RTOS_SEMAPHORES */
+  if(osSemaphoreHandle == NULL)
+  {
+    Error_Handler();
+  }
+
+  /* Create the thread(s) */
+  /* creation of SEM_Thread */
+  SEM_ThreadHandle = osThreadNew(CORE1_SemaphoreCoreSync, NULL, &SEM_Thread_attributes);
+
+  /* USER CODE BEGIN RTOS_THREADS */
+  if(SEM_ThreadHandle == NULL)
+  {
+    Error_Handler();
+  }
+
   /* Start scheduler */
   osKernelStart();
 
@@ -118,7 +145,7 @@ int main(void)
   * @param  argument: Not used
   * @retval None
   */
-static void CORE1_SemaphoreCoreSync(void const *argument)
+static void CORE1_SemaphoreCoreSync(void *argument)
 { 
   for(;;)
   {
@@ -165,7 +192,7 @@ static void SystemClock_Config(void)
   __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
 
   while(!__HAL_PWR_GET_FLAG(PWR_FLAG_VOSRDY)) {}
-  
+
   /* Enable HSE Oscillator and activate PLL with HSE as source */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
@@ -188,7 +215,7 @@ static void SystemClock_Config(void)
   {
     Error_Handler();
   }
-  
+
 /* Select PLL as system clock source and configure  bus clocks dividers */
   RCC_ClkInitStruct.ClockType = (RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_D1PCLK1 | RCC_CLOCKTYPE_PCLK1 | \
                                  RCC_CLOCKTYPE_PCLK2  | RCC_CLOCKTYPE_D3PCLK1);
@@ -205,32 +232,32 @@ static void SystemClock_Config(void)
   {
     Error_Handler();
   }
-  
+
   /*
-  Note : The activation of the I/O Compensation Cell is recommended with communication  interfaces
-          (GPIO, SPI, FMC, QSPI ...)  when  operating at  high frequencies(please refer to product datasheet)       
-          The I/O Compensation Cell activation  procedure requires :
-        - The activation of the CSI clock
-        - The activation of the SYSCFG clock
-        - Enabling the I/O Compensation Cell : setting bit[0] of register SYSCFG_CCCSR
-  
-          To do this please uncomment the following code 
+  Note : The activation of the I/O Compensation Cell is recommended with communication interfaces
+         (GPIO, SPI, FMC, QSPI ...) when operating at high frequencies(please refer to product datasheet)
+         The I/O Compensation Cell activation  procedure requires :
+         - The activation of the CSI clock
+         - The activation of the SYSCFG clock
+         - Enabling the I/O Compensation Cell : setting bit[0] of register SYSCFG_CCCSR
+
+          To do this please uncomment the following code
   */
  
-  /*  
+  /*
   __HAL_RCC_CSI_ENABLE() ;
-  
+
   __HAL_RCC_SYSCFG_CLK_ENABLE() ;
-  
+
   HAL_EnableCompensationCell();
-  */  
+  */
 }
 
 /**
-* @brief  CPU L1-Cache enable.
-* @param  None
-* @retval None
-*/
+  * @brief  CPU L1-Cache enable.
+  * @param  None
+  * @retval None
+  */
 static void CPU_CACHE_Enable(void)
 {
   /* Enable I-Cache */
@@ -252,7 +279,6 @@ static void Error_Handler(void)
   {
   }
 }
-
 
 /**
   * @brief  Configure the MPU attributes
@@ -285,7 +311,7 @@ static void MPU_Config(void)
   HAL_MPU_Enable(MPU_PRIVILEGED_DEFAULT);
 }
 
-#ifdef  USE_FULL_ASSERT
+#ifdef USE_FULL_ASSERT
 
 /**
   * @brief  Reports the name of the source file and the source line number
@@ -295,7 +321,7 @@ static void MPU_Config(void)
   * @retval None
   */
 void assert_failed(uint8_t* file, uint32_t line)
-{ 
+{
   /* User can add his own implementation to report the file name and line number,
      ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
 
@@ -305,12 +331,3 @@ void assert_failed(uint8_t* file, uint32_t line)
   }
 }
 #endif
-
-/**
-  * @}
-  */
-
-/**
-  * @}
-  */
-

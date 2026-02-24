@@ -18,7 +18,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "cmsis_os.h"
+#include "cmsis_os2.h"
 
 /** @addtogroup STM32H7xx_HAL_Examples
   * @{
@@ -78,6 +78,7 @@ int main(void)
   HAL_NVIC_EnableIRQ(HSEM2_IRQn);
 
   /* Start scheduler */
+  osKernelInitialize();
   osKernelStart();
 
   /* We should never get here as control is now taken by the scheduler */

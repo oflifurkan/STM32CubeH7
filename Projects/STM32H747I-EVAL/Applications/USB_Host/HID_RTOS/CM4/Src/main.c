@@ -18,7 +18,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "cmsis_os.h"
+#include "cmsis_os2.h"
 
 /** @addtogroup STM32H7xx_HAL_Examples
   * @{
@@ -70,6 +70,9 @@ int main(void)
        - Low Level Initialization
      */
   HAL_Init();
+
+  /* Init scheduler */
+  osKernelInitialize();
 
   /* Enable HSEM Interrupt */
   HAL_NVIC_SetPriority(HSEM2_IRQn,10, 0);

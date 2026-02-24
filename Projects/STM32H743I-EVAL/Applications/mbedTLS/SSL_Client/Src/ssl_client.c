@@ -85,7 +85,7 @@ mbedtls_x509_crt cacert;
 uint8_t memory_buf[MAX_MEM_SIZE];
 #endif
 
-void SSL_Client(void const *argument)
+void SSL_Client(void *argument)
 {
   int len;
 

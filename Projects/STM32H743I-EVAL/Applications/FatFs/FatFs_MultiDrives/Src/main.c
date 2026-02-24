@@ -41,14 +41,36 @@ typedef enum {
   CARD_STATUS_CHANGED,
 }USBDISK_ConnectionStateTypeDef;
 
-osMessageQId ConnectionEvent, TriggerEventUSBFile, TriggerEventSDFile;
+/* Definitions for osThread */
+osThreadId_t FS_AppThreadHandle;
+const osThreadAttr_t FS_AppThread_attributes = {
+  .name = "FS_AppThread",
+  .priority = (osPriority_t) osPriorityBelowNormal,
+  .stack_size = 7 * configMINIMAL_STACK_SIZE
+};
+
+/* Definitions for osQueue */
+osMessageQueueId_t ConnectionEvent, TriggerEventUSBFile, TriggerEventSDFile;
+
+const osMessageQueueAttr_t ConnectionEvent_attributes = {
+  .name = "ConnectionEvent"
+};
+
+const osMessageQueueAttr_t TriggerEventUSBFile_attributes = {
+  .name = "TriggerEventUSBFile"
+};
+
+const osMessageQueueAttr_t TriggerEventSDFile_attributes = {
+  .name = "TriggerEventSDFile"
+};
+
 /* Private function prototypes -----------------------------------------------*/ 
 static void SystemClock_Config(void);
 
 static void USBH_UserProcess(USBH_HandleTypeDef *phost, uint8_t id);
 static void FS_USBFileOperations(void);
 static void FS_SDFileOperations(void);
-static void FS_AppThread(void const *argument);
+static void FS_AppThread(void *argument);
 
 static void CPU_CACHE_Enable(void);
 static void MPU_Config(void);
@@ -102,23 +124,27 @@ int main(void)
     if(FATFS_LinkDriver(&SD_Driver, SDPath) == 0) 
     {
       SD_Initialize();
-
       /*##-1- Create Application tasks #########################################*/
-      osThreadDef(FS_AppThread, FS_AppThread, osPriorityBelowNormal, 0, 5 * configMINIMAL_STACK_SIZE);
-      osThreadCreate(osThread(FS_AppThread), NULL);
+      FS_AppThreadHandle = osThreadNew(FS_AppThread, NULL, &FS_AppThread_attributes);
+
+      /* USER CODE BEGIN RTOS_THREADS */
+      if(FS_AppThreadHandle == NULL)
+      {
+        Error_Handler();
+      }
+      /* USER CODE END RTOS_THREADS */
 
       /*##-2- Create Application Queues ########################################*/
-      osMessageQDef(ConnectionEvent, 1, uint16_t);
-      ConnectionEvent = osMessageCreate(osMessageQ(ConnectionEvent), NULL);
-      
-      osMessageQDef(TriggerEventUSBFile, 1, uint16_t);
-      TriggerEventUSBFile = osMessageCreate(osMessageQ(TriggerEventUSBFile), NULL);    
-      
-      osMessageQDef(TriggerEventSDFile, 1, uint16_t);
-      TriggerEventSDFile = osMessageCreate(osMessageQ(TriggerEventSDFile), NULL); 
+      ConnectionEvent = osMessageQueueNew (1, sizeof(uint16_t), &ConnectionEvent_attributes);
+      TriggerEventUSBFile = osMessageQueueNew (1, sizeof(uint16_t), &TriggerEventUSBFile_attributes);
+      TriggerEventSDFile = osMessageQueueNew (1, sizeof(uint16_t), &TriggerEventSDFile_attributes);
 
     }
   }
+
+  /* Init scheduler */
+  osKernelInitialize();
+
   /*##-3- Start scheduler ####################################################*/
   osKernelStart();
 
@@ -131,10 +157,11 @@ int main(void)
   * @param  pvParameters not used
   * @retval None
   */
-static void FS_AppThread(void const *argument)
+static void FS_AppThread(void *argument)
 {
-  osEvent event;
-  
+  osStatus_t status;
+  uint32_t QueueMsg;
+
   /* Init Host Library */
   USBH_Init(&hUSB_Host, USBH_UserProcess, 0);
   
@@ -146,26 +173,28 @@ static void FS_AppThread(void const *argument)
 
   if(BSP_SD_IsDetected(0))
   {
-    osMessagePut ( ConnectionEvent, CARD_CONNECTED, osWaitForever);
+    QueueMsg = CARD_CONNECTED;
+    osMessageQueuePut ( ConnectionEvent, &QueueMsg, 0, osWaitForever);
   }
   
   for( ;; )
   {
-    event = osMessageGet(ConnectionEvent, osWaitForever);
+    status = osMessageQueueGet(ConnectionEvent, &QueueMsg, 0, osWaitForever);
     
-    if(event.status == osEventMessage)
+    if(status == osOK)
     {
-      switch(event.value.v)
+      switch((USBDISK_ConnectionStateTypeDef)QueueMsg)
       {
-      case CARD_STATUS_CHANGED:
+        case CARD_STATUS_CHANGED:
         if (BSP_SD_IsDetected(0))
         {
-          osMessagePut ( ConnectionEvent, CARD_CONNECTED, osWaitForever);
+          QueueMsg = (uint32_t)CARD_DISCONNECTED;
+          osMessageQueuePut (ConnectionEvent, &QueueMsg, 0, osWaitForever);
         }
         else
         {
           BSP_LED_Off(LED4);
-          osMessagePut ( ConnectionEvent, CARD_DISCONNECTED, osWaitForever);
+          osMessageQueuePut (ConnectionEvent, &QueueMsg, 0, osWaitForever);
 
         }
         break;
@@ -315,20 +344,23 @@ static void FS_SDFileOperations(void)
   * @retval None
   */
 static void USBH_UserProcess(USBH_HandleTypeDef *phost, uint8_t id)
-{  
+{
+  uint32_t QueueMsg;
   switch(id)
   { 
   case HOST_USER_SELECT_CONFIGURATION:
     break;
     
   case HOST_USER_DISCONNECTION:
-    BSP_LED_Off(LED1); 
-    BSP_LED_Off(LED2);     
-    osMessagePut(ConnectionEvent, USBDISK_DISCONNECTED, 0); 
+    BSP_LED_Off(LED1);
+    BSP_LED_Off(LED2);
+    QueueMsg = USBDISK_DISCONNECTED;
+    osMessageQueuePut(ConnectionEvent, &QueueMsg, 0, osWaitForever);
     break;
-    
+
   case HOST_USER_CLASS_ACTIVE:
-    osMessagePut(ConnectionEvent, USBDISK_CONNECTED, 0);
+    QueueMsg = USBDISK_CONNECTED;
+    osMessageQueuePut(ConnectionEvent, &QueueMsg, 0, osWaitForever);
     break;
     
   default:
@@ -343,12 +375,13 @@ static void USBH_UserProcess(USBH_HandleTypeDef *phost, uint8_t id)
   */
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
+  uint32_t QueueMsg = CARD_STATUS_CHANGED;
   if(MFX_IRQOUT_PIN == GPIO_Pin)
   {
     if (statusChanged == 0)
     {
       statusChanged = 1;
-      osMessagePut ( ConnectionEvent, CARD_STATUS_CHANGED, osWaitForever);
+      osMessageQueuePut ( ConnectionEvent, &QueueMsg, 0, osWaitForever);
     }
   }
 }

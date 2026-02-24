@@ -58,7 +58,7 @@
 #define USARTx_RX_AF                     GPIO_AF4_USART1
 #endif /* USE_LCD */
 
-void mbedTLS_Selftest(void const *argument);
+void mbedTLS_Selftest(void *argument);
 void Error_Handler(void);
 void Success_Handler(void);
 

@@ -21,7 +21,7 @@
 #define STM32h743i_EVAL_CONFIG_H
 
 #ifdef __cplusplus
- extern "C" {
+extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
@@ -45,8 +45,6 @@
 
 /* Default TS touch number */
 #define TS_TOUCH_NBR                        FT5336_MAX_NB_TOUCH
-
-
 
 /* IRQ priorities */
 #define BSP_SDRAM_IT_PRIORITY               15U

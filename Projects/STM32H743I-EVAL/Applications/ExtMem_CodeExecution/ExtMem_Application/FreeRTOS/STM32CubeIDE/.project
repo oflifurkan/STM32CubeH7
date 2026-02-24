@@ -196,9 +196,9 @@
 			<locationURI>PARENT-7-PROJECT_LOC/Drivers/BSP/STM32H743I-EVAL/stm32h743i_eval_io.c</locationURI>
 		</link>
 		<link>
-			<name>Middlewares/FreeRTOS/CMSIS_RTOS/cmsis_os.c</name>
+			<name>Middlewares/FreeRTOS/CMSIS_RTOS_V2/cmsis_os2.c</name>
 			<type>1</type>
-			<locationURI>PARENT-7-PROJECT_LOC/Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/cmsis_os.c</locationURI>
+			<locationURI>PARENT-7-PROJECT_LOC/Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.c</locationURI>
 		</link>
 		<link>
 			<name>Middlewares/FreeRTOS/portable/heap_4.c</name>
@@ -208,7 +208,7 @@
 		<link>
 			<name>Middlewares/FreeRTOS/portable/port.c</name>
 			<type>1</type>
-			<locationURI>PARENT-7-PROJECT_LOC/Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM7/r0p1/port.c</locationURI>
+			<locationURI>PARENT-7-PROJECT_LOC/Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F/port.c</locationURI>
 		</link>
 	</linkedResources>
 </projectDescription>

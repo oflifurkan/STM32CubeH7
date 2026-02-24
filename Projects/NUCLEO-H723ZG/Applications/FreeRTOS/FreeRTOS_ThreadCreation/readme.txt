@@ -73,13 +73,11 @@ RTOS, FreeRTOS, Threading
   - This application has been tested with NUCLEO-H723ZG board and can be
     easily tailored to any other supported device and development board.
 
-
 @par How to use it ?
 
 In order to make the program work, you must do the following:
  - Open your preferred toolchain
  - Rebuild all files and load your image into target memory
  - Run the example
-
 
  */

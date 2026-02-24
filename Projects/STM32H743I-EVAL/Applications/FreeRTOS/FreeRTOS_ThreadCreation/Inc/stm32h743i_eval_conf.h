@@ -21,7 +21,7 @@
 #define STM32h743i_EVAL_CONFIG_H
 
 #ifdef __cplusplus
- extern "C" {
+extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
@@ -39,13 +39,13 @@
 
 /* IO class usage define */
 #define USE_BSP_IO_CLASS                    1U
-   
+
 /* SD high performance usage define */
 #define USE_SD_HIGH_PERFORMANCE             0U
 
 /*DMA2D to fill RGB rectangle usage define*/
 #define USE_DMA2D_TO_FILL_RGB_RECT          0U
-   
+
 /* LCD controllers defines */
 #define LCD_LAYER_0_ADDRESS                 0xD0000000U
 #define LCD_LAYER_1_ADDRESS                 0xD0200000U

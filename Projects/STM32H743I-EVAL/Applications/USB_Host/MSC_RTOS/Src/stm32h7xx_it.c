@@ -104,17 +104,6 @@ void DebugMon_Handler(void)
 {
 }
 
-/**
-  * @brief  This function handles SysTick Handler.
-  * @param  None
-  * @retval None
-  */
-void SysTick_Handler(void)
-{
-  osSystickHandler();
-}
-
-/******************************************************************************/
 /* stm32h7xx Peripherals Interrupt Handlers */
 /* Add here the Interrupt Handler for the used peripheral(s) (PPP), for the */
 /* available peripheral interrupt handler's name please refer to the startup */

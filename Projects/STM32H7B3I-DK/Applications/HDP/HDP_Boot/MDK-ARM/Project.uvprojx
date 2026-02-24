@@ -406,6 +406,21 @@
           </Files>
         </Group>
         <Group>
+          <GroupName>Drivers/BSP/Components/GT911</GroupName>
+          <Files>
+            <File>
+              <FileName>gt911.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Drivers/BSP/Components/gt911/gt911.c</FilePath>
+            </File>
+            <File>
+              <FileName>gt911_reg.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../../Drivers/BSP/Components/gt911/gt911_reg.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
           <GroupName>Drivers/BSP/Components/IS42S16800J</GroupName>
           <Files>
             <File>

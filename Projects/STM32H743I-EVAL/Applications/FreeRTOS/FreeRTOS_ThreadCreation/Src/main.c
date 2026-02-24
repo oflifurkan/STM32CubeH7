@@ -18,24 +18,17 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "cmsis_os.h"
+#include "cmsis_os2.h"
+#include "FreeRTOS.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-#if (osCMSIS < 0x20000U)
-osThreadId LEDThread1Handle, LEDThread2Handle;
-#else
 osThreadId_t LEDThread1Handle, LEDThread2Handle;
-#endif
 
 /* Private function prototypes -----------------------------------------------*/
 static void MPU_Config(void);
-#if (osCMSIS < 0x20000U)
-static void LED_Thread1(void const *argument);
-static void LED_Thread2(void const *argument);
-#else
 static void LED_Thread1(void *argument);
 static void LED_Thread2(void *argument);
 static osThreadAttr_t attr = {
@@ -43,8 +36,6 @@ static osThreadAttr_t attr = {
                         .stack_size = configMINIMAL_STACK_SIZE,
                       };
                       
-
-#endif
 static void SystemClock_Config(void);
 static void CPU_CACHE_Enable(void);
 /* Private functions ---------------------------------------------------------*/
@@ -81,28 +72,14 @@ int main(void)
   /* Initialize LEDs */
   BSP_LED_Init(LED1);
   BSP_LED_Init(LED2);
- 
-#if (osCMSIS < 0x20000U)
-  /* Thread 1 definition */
-  osThreadDef(LED1, LED_Thread1, osPriorityNormal, 0, configMINIMAL_STACK_SIZE);
-  
-  /*  Thread 2 definition */
-  osThreadDef(LED2, LED_Thread2, osPriorityNormal, 0, configMINIMAL_STACK_SIZE);
 
-  /* Start thread 1 */
-  LEDThread1Handle = osThreadCreate(osThread(LED1), NULL);
-
-  /* Start thread 2 */
-  LEDThread2Handle = osThreadCreate(osThread(LED2), NULL);
-#else
    osKernelInitialize();
-   
+
    attr.name = "LED1";
    LEDThread1Handle = osThreadNew(LED_Thread1, NULL, (const osThreadAttr_t *)&attr);
-   
+
    attr.name = "LED2";
    LEDThread2Handle = osThreadNew(LED_Thread2, NULL, (const osThreadAttr_t *)&attr);
-#endif
 
   /* Start scheduler */
   osKernelStart();
@@ -117,28 +94,17 @@ int main(void)
   * @param  thread not used
   * @retval None
   */
-#if (osCMSIS < 0x20000U)
-static void LED_Thread1(void const *argument)
-#else
 static void LED_Thread1(void *argument)
-#endif
 {
   uint32_t count = 0;
   (void) argument;
 
   for (;;)
   {
-#if (osCMSIS < 0x20000U)
-    count = osKernelSysTick() + 5000;
-    /* Toggle LED1 every 200 ms for 5 s */
-    while (count > osKernelSysTick())
-    {
-#else
     count = osKernelGetTickCount() + 5000;
     /* Toggle LED1 every 200 ms for 5 s */
     while (count > osKernelGetTickCount())
     {
-#endif 
       BSP_LED_Toggle(LED1);
       osDelay(200);
     }
@@ -149,18 +115,10 @@ static void LED_Thread1(void *argument)
     /* Suspend Thread 1 */
     osThreadSuspend(LEDThread1Handle);
 
-#if (osCMSIS < 0x20000U)
-    count = osKernelSysTick() + 5000;
-    /* Toggle LED1 every 500 ms for 5 s */
-    while (count > osKernelSysTick())
-    {
-#else
     count = osKernelGetTickCount() + 5000;
     /* Toggle LED1 every 500 ms for 5 s */
     while (count > osKernelGetTickCount())
     {
-#endif
-
       BSP_LED_Toggle(LED1);
 
       osDelay(500);
@@ -176,28 +134,18 @@ static void LED_Thread1(void *argument)
   * @param  argument not used
   * @retval None
   */
-#if (osCMSIS < 0x20000U)
-static void LED_Thread2(void const *argument)
-#else
+
 static void LED_Thread2(void *argument)
-#endif
 {
   uint32_t count;
   (void) argument;
 
   for (;;)
   {
- #if (osCMSIS < 0x20000U)
-    count = osKernelSysTick() + 10000;
-    /* Toggle LED1 every 500 ms for 10 s */
-    while (count > osKernelSysTick())
-    {
-#else
     count = osKernelGetTickCount() + 10000;
     /* Toggle LED1 every 500 ms for 10 s */
     while (count > osKernelGetTickCount())
     {
-#endif
      BSP_LED_Toggle(LED2);
      osDelay(500);
     }
@@ -304,7 +252,6 @@ static void CPU_CACHE_Enable(void)
   SCB_EnableDCache();
 }
 
-
 /**
   * @brief  Configure the MPU attributes
   * @param  None
@@ -336,7 +283,22 @@ static void MPU_Config(void)
   HAL_MPU_Enable(MPU_PRIVILEGED_DEFAULT);
 }
 
-#ifdef  USE_FULL_ASSERT
+/**
+  * @brief  This function is executed in case of error occurrence.
+  * @retval None
+  */
+void Error_Handler(void)
+{
+  /* USER CODE BEGIN Error_Handler_Debug */
+  /* User can add his own implementation to report the HAL error return state */
+  /* Infinite loop */
+  while (1)
+  {
+  }
+  /* USER CODE END Error_Handler_Debug */
+}
+
+#ifdef USE_FULL_ASSERT
 
 /**
   * @brief  Reports the name of the source file and the source line number
@@ -356,12 +318,3 @@ void assert_failed(uint8_t *file, uint32_t line)
   }
 }
 #endif
-
-/**
-  * @}
-  */
-
-/**
-  * @}
-  */
-

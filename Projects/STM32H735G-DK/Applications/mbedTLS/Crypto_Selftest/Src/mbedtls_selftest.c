@@ -295,7 +295,7 @@ const selftest_t selftests[] =
 };
 #endif /* MBEDTLS_SELF_TEST */
 
-void mbedTLS_Selftest(void const *argument)
+void mbedTLS_Selftest(void *argument)
 {
     int suites_tested = 0, suites_failed = 0;
 #if defined(MBEDTLS_SELF_TEST)

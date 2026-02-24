@@ -44,18 +44,18 @@ int main(void)
 {
   size_t xReceivedBytes;
   uint32_t ulNextValue = 0;
-  char cExpectedString[ 12 ]; 
+  char cExpectedString[ 12 ];
   char cReceivedString[ 12 ];
   
  /*HW semaphore Clock enable*/
   __HAL_RCC_HSEM_CLK_ENABLE();
- 
+
  /* Activate HSEM notification for Cortex-M4*/
   HAL_HSEM_ActivateNotification(__HAL_HSEM_SEMID_TO_MASK(HSEM_ID_0));
-  
-  /* 
+
+  /*
     Domain D2 goes to STOP mode (Cortex-M4 in deep-sleep) waiting for Cortex-M7 to
-    perform system initialization (system clock config, external memory configuration.. )   
+    perform system initialization (system clock config, external memory configuration.. )
   */
   HAL_PWREx_ClearPendingEvent();
   HAL_PWREx_EnterSTOPMode(PWR_MAINREGULATOR_ON, PWR_STOPENTRY_WFE, PWR_D2_DOMAIN);
@@ -63,20 +63,20 @@ int main(void)
   /* Clear HSEM flag */
   __HAL_HSEM_CLEAR_FLAG(__HAL_HSEM_SEMID_TO_MASK(HSEM_ID_0));
 
- /* STM32H7xx HAL library initialization:
-       - Systick timer is configured by default as source of time base, but user 
-         can eventually implement his proper time base source (a general purpose 
-         timer for example or other time source), keeping in mind that Time base 
-         duration should be kept 1ms since PPP_TIMEOUT_VALUEs are defined and 
+  /* STM32H7xx HAL library initialization:
+       - Systick timer is configured by default as source of time base, but user
+         can eventually implement his proper time base source (a general purpose
+         timer for example or other time source), keeping in mind that Time base
+         duration should be kept 1ms since PPP_TIMEOUT_VALUEs are defined and
          handled in milliseconds basis.
        - Set NVIC Group Priority to 4
        - Low Level Initialization
-     */
+  */
   HAL_Init();
-  
+
   BSP_LED_Init(LED1);
   BSP_LED_Init(LED2);
-  
+
   if( xCoreMessageBuffer == NULL )
   {
     Error_Handler();
@@ -87,13 +87,13 @@ int main(void)
     memset( cExpectedString, 0x00, sizeof( cExpectedString ) );
     sprintf( cExpectedString, "%lu", ( unsigned long ) ulNextValue );
     memset( cReceivedString, 0x00, sizeof( cReceivedString ) );
-    
+
     /* Receive message from core 1 */
     do
     {
       xReceivedBytes = xMessageBufferReceive( xCoreMessageBuffer, cReceivedString, sizeof( cReceivedString ), 0);
     }while ( xReceivedBytes == 0 );
-    
+
     /* Check the received string */
     if( strcmp( cExpectedString, cReceivedString ) == 0 )
     {
@@ -111,8 +111,6 @@ int main(void)
     }
   }
 }
-
-
 
 /**
   * @brief  This function is executed in case of error occurrence.

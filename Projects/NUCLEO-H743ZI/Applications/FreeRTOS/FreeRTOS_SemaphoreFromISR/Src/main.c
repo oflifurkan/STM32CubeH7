@@ -18,7 +18,8 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "cmsis_os.h"
+#include "FreeRTOS.h"
+#include "cmsis_os2.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -26,11 +27,15 @@
 #define semtstSTACK_SIZE configMINIMAL_STACK_SIZE
 
 /* Private variables ---------------------------------------------------------*/
-osSemaphoreId osSemaphore;
-
+osSemaphoreId_t osSemaphore;
+osThreadId_t SEM_Thread1Handle;
+static osThreadAttr_t attr = {
+                        .priority = osPriorityNormal,
+                        .stack_size = configMINIMAL_STACK_SIZE,
+                      };
 /* Private function prototypes -----------------------------------------------*/
 static void MPU_Config(void);
-static void SemaphoreTest(void const *argument);
+static void SemaphoreTest(void *argument);
 static void SystemClock_Config(void);
 static void CPU_CACHE_Enable(void);
 /* Private functions ---------------------------------------------------------*/
@@ -63,23 +68,23 @@ int main(void)
 
   /* Configure the system clock to 400 MHz */
   SystemClock_Config();
-  
+
   /* Configure LED1 */
   BSP_LED_Init(LED1);
-  
+
   /* Configure the User Button in EXTI Mode */
-  BSP_PB_Init(BUTTON_USER, BUTTON_MODE_EXTI); 
-  
-  /* Define used semaphore */
-  osSemaphoreDef(SEM);
-  
+  BSP_PB_Init(BUTTON_USER, BUTTON_MODE_EXTI);
+
+  osKernelInitialize();
+
   /* Create the semaphore */
-  osSemaphore = osSemaphoreCreate(osSemaphore(SEM) , 1);
-  
+  osSemaphore = osSemaphoreNew(1U, 1U, NULL);
+
   /* Create the Thread that toggle LED1 */
-  osThreadDef(SEM_Thread, SemaphoreTest, osPriorityNormal, 0, semtstSTACK_SIZE);
-  osThreadCreate(osThread(SEM_Thread), (void *) osSemaphore);
-  
+
+  attr.name = "THREAD1";
+  SEM_Thread1Handle = osThreadNew(SemaphoreTest, NULL, (const osThreadAttr_t *)&attr);
+
   /* Start scheduler */
   osKernelStart();
 
@@ -93,14 +98,14 @@ int main(void)
   * @param  argument: Not used
   * @retval None
   */
-static void SemaphoreTest(void const *argument)
+static void SemaphoreTest(void *argument)
 { 
   for(;;)
   {
     if (osSemaphore != NULL)
     {
       /* Try to obtain the semaphore */
-      if(osSemaphoreWait(osSemaphore , 0) == osOK)
+      if(osSemaphoreAcquire(osSemaphore , 0) == osOK)
       {
         BSP_LED_Toggle(LED1);
       }
@@ -138,11 +143,11 @@ static void SystemClock_Config(void)
 
   /* The voltage scaling allows optimizing the power consumption when the device is
      clocked below the maximum system frequency, to update the voltage scaling value
-     regarding system frequency refer to product datasheet.  */
+     regarding system frequency refer to product datasheet. */
   __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
 
   while(!__HAL_PWR_GET_FLAG(PWR_FLAG_VOSRDY)) {}
-  
+
   /* Enable HSE Oscillator and activate PLL with HSE as source */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_BYPASS;
@@ -165,7 +170,7 @@ static void SystemClock_Config(void)
   {
     while(1);
   }
-  
+
 /* Select PLL as system clock source and configure  bus clocks dividers */
   RCC_ClkInitStruct.ClockType = (RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_D1PCLK1 | RCC_CLOCKTYPE_PCLK1 | \
                                  RCC_CLOCKTYPE_PCLK2  | RCC_CLOCKTYPE_D3PCLK1);
@@ -173,15 +178,15 @@ static void SystemClock_Config(void)
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.SYSCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_HCLK_DIV2;
-  RCC_ClkInitStruct.APB3CLKDivider = RCC_APB3_DIV2;  
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_APB1_DIV2; 
-  RCC_ClkInitStruct.APB2CLKDivider = RCC_APB2_DIV2; 
-  RCC_ClkInitStruct.APB4CLKDivider = RCC_APB4_DIV2; 
+  RCC_ClkInitStruct.APB3CLKDivider = RCC_APB3_DIV2;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_APB1_DIV2;
+  RCC_ClkInitStruct.APB2CLKDivider = RCC_APB2_DIV2;
+  RCC_ClkInitStruct.APB4CLKDivider = RCC_APB4_DIV2;
   ret = HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_4);
   if(ret != HAL_OK)
   {
     while(1);
-  }	
+  }
 }
 
 /**
@@ -195,10 +200,10 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 }
 
 /**
-* @brief  CPU L1-Cache enable.
-* @param  None
-* @retval None
-*/
+  * @brief  CPU L1-Cache enable.
+  * @param  None
+  * @retval None
+  */
 static void CPU_CACHE_Enable(void)
 {
   /* Enable I-Cache */
@@ -207,7 +212,6 @@ static void CPU_CACHE_Enable(void)
   /* Enable D-Cache */
   SCB_EnableDCache();
 }
-
 
 /**
   * @brief  Configure the MPU attributes
@@ -240,7 +244,23 @@ static void MPU_Config(void)
   HAL_MPU_Enable(MPU_PRIVILEGED_DEFAULT);
 }
 
-#ifdef  USE_FULL_ASSERT
+/**
+  * @brief  This function is executed in case of error occurrence.
+  * @retval None
+  */
+void Error_Handler(void)
+{
+  /* USER CODE BEGIN Error_Handler_Debug */
+  /* User can add his own implementation to report the HAL error return state */
+  /* Infinite loop */
+  while (1)
+  {
+
+  }
+  /* USER CODE END Error_Handler_Debug */
+}
+
+#ifdef USE_FULL_ASSERT
 
 /**
   * @brief  Reports the name of the source file and the source line number
@@ -260,12 +280,4 @@ void assert_failed(uint8_t *file, uint32_t line)
   }
 }
 #endif
-
-/**
-  * @}
-  */
-
-/**
-  * @}
-  */
 

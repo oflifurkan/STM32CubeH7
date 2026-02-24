@@ -20,7 +20,6 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
@@ -34,11 +33,16 @@ typedef enum {
   CARD_DISCONNECTED,
   CARD_STATUS_CHANGED,
 }SD_ConnectionStateTypeDef;
-
-osMessageQId ConnectionEvent;
+osThreadId_t FS_AppThreadHandle;
+osMessageQueueId_t ConnectionEvent;
+static osThreadAttr_t attr = {
+                              .name = "uSDThread",
+                              .priority = osPriorityNormal,
+                              .stack_size = 8 * configMINIMAL_STACK_SIZE,
+                      };
 /* Private function prototypes -----------------------------------------------*/
 static void SystemClock_Config(void);
-static void FS_AppThread(void const *argument);
+static void FS_AppThread(void *argument);
 static void CPU_CACHE_Enable(void);
 static void MPU_Config(void);
 static void FS_FileOperations(void);
@@ -75,25 +79,29 @@ int main(void)
   
   /* Configure the system clock to 400 MHz */
   SystemClock_Config();
-  
+ 
   BSP_IO_Init(0, &init);
   /* Configure LED1 and LED3 */
   
   BSP_LED_Init(LED1);
   BSP_LED_Init(LED3);  
-  
+
   /*##-1- Link the micro SD disk I/O driver And Create RTOS environment ######*/
   if(FATFS_LinkDriver(&SD_Driver, SDPath) == 0)
   {
     SD_Initialize();
-    osThreadDef(uSDThread, FS_AppThread, osPriorityNormal, 0, 8 * configMINIMAL_STACK_SIZE);
-    osThreadCreate(osThread(uSDThread), NULL); 
-    
+    /* Create the thread(s) */
+    /* definition and creation of USER_Thread */
+    FS_AppThreadHandle = osThreadNew(FS_AppThread, NULL, (const osThreadAttr_t *)&attr);
+
     /* Create Storage Message Queue */
-    osMessageQDef(osqueue, 10, uint16_t);
-    ConnectionEvent = osMessageCreate (osMessageQ(osqueue), NULL);  
+    ConnectionEvent = osMessageQueueNew (1U, sizeof(uint16_t), NULL);
 
   }
+
+  /* Init scheduler */
+  osKernelInitialize();
+
   /*##-2- Start scheduler ####################################################*/
   osKernelStart();
   
@@ -106,33 +114,38 @@ int main(void)
   * @param  pvParameters not used
   * @retval None
   */
-static void FS_AppThread(void const *argument)
+static void FS_AppThread(void *argument)
 {
-  osEvent event;
+  uint32_t QueueMsg;
+  osStatus_t status;
 
     if(BSP_SD_IsDetected(0))
     {
-      osMessagePut ( ConnectionEvent, CARD_CONNECTED, osWaitForever);
+      QueueMsg = (uint32_t)CARD_CONNECTED;
+      osMessageQueuePut ( ConnectionEvent, &QueueMsg, 0U, 100U);
     }
     
   /* Infinite Loop */
   for( ;; )
   {
-    event = osMessageGet( ConnectionEvent, osWaitForever );
+    status  = osMessageQueueGet(ConnectionEvent, &QueueMsg, 0U, 100U);
+
     
-    if( event.status == osEventMessage )
+    if( status == osOK )
     {
-      switch(event.value.v)
+      switch((SD_ConnectionStateTypeDef)QueueMsg)
       {
       case CARD_STATUS_CHANGED:
         if (BSP_SD_IsDetected(0))
         {
-          osMessagePut ( ConnectionEvent, CARD_CONNECTED, osWaitForever);
+          QueueMsg = (uint32_t)CARD_CONNECTED;
+          osMessageQueuePut ( ConnectionEvent, &QueueMsg, 0U, 100U);
         }
         else
         {
           BSP_LED_Off(LED4);
-          osMessagePut ( ConnectionEvent, CARD_DISCONNECTED, osWaitForever);
+          QueueMsg = (uint32_t)CARD_DISCONNECTED;
+          osMessageQueuePut ( ConnectionEvent, &QueueMsg, 0U, 100U);
           
         }
         break;
@@ -235,7 +248,8 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     if (statusChanged == 0)
     {
       statusChanged = 1;
-      osMessagePut ( ConnectionEvent, CARD_STATUS_CHANGED, osWaitForever);
+      uint32_t QueueMsg = (uint32_t)CARD_STATUS_CHANGED;
+      osMessageQueuePut ( ConnectionEvent, &QueueMsg, 0U, 100U);
     }
   }
 }

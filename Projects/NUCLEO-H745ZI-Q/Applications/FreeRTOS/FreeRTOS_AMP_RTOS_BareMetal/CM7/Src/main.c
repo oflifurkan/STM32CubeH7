@@ -2,7 +2,7 @@
   ******************************************************************************
   * @file    FreeRTOS/FreeRTOS_AMP_RTOS_BareMetal/CM7/Src/main.c
   * @author  MCD Application Team
-  *          This is the main program for Cortex-M7 
+  *          This is the main program for Cortex-M7
   ******************************************************************************
   * @attention
   *
@@ -30,7 +30,7 @@
 #include "MessageBufferAMP.h"
 
 /* Private typedef -----------------------------------------------------------*/
-/* Private define ------------------------------------------------------------*/ 
+/* Private define ------------------------------------------------------------*/
 #define HSEM_ID_0 (0U) /* HW semaphore 0*/
 
 /* Private function prototypes -----------------------------------------------*/
@@ -43,8 +43,6 @@ void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, uint32_
  * Implementation of the task that run on CM7 and send message to CM4.
  */
 static void prvCore1Task( void *pvParameters );
-
-
 
 /* Private functions ---------------------------------------------------------*/
 
@@ -70,20 +68,20 @@ int main(void)
   }
 
   /* STM32H7xx HAL library initialization:
-       - Systick timer is configured by default as source of time base, but user 
-         can eventually implement his proper time base source (a general purpose 
-         timer for example or other time source), keeping in mind that Time base 
-         duration should be kept 1ms since PPP_TIMEOUT_VALUEs are defined and 
+       - Systick timer is configured by default as source of time base, but user
+         can eventually implement his proper time base source (a general purpose
+         timer for example or other time source), keeping in mind that Time base
+         duration should be kept 1ms since PPP_TIMEOUT_VALUEs are defined and
          handled in milliseconds basis.
        - Set NVIC Group Priority to 4
        - Low Level Initialization
   */
   HAL_Init();
-  
+
   /* Configure the system clock to 400 MHz */
   SystemClock_Config();
 
-  xCoreMessageBuffer = xMessageBufferCreateStatic( mbaTASK_MESSAGE_BUFFER_SIZE,ucStorageBuffer ,&xStreamBufferStruct);     
+  xCoreMessageBuffer = xMessageBufferCreateStatic( mbaTASK_MESSAGE_BUFFER_SIZE,ucStorageBuffer ,&xStreamBufferStruct);
   configASSERT( xCoreMessageBuffer );
 
   /* Cortex-M7 will release Cortex-M4  by means of HSEM notification */
@@ -94,9 +92,8 @@ int main(void)
   /*Release HSEM in order to wakeup the CPU2(CM4) from stop mode*/
   HAL_HSEM_Release(HSEM_ID_0,0);
 
- 
   /* Start the core 1 task */
-  xTaskCreate( prvCore1Task, "AMPCore1", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY, NULL );		
+  xTaskCreate( prvCore1Task, "AMPCore1", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY, NULL );
 
   /* Start scheduler */
   vTaskStartScheduler();
@@ -109,28 +106,28 @@ static void prvCore1Task( void *pvParameters )
 {
   uint32_t ulNextValue = 0;
   const TickType_t xDelay = pdMS_TO_TICKS( 500 );
-  char cString[ 15 ]; 
-  
+  char cString[ 15 ];
+
   /* Remove warning about unused parameters. */
   ( void ) pvParameters;
-  
+
   for( ;; )
   {
     /* Create the next string to send.  The value is incremented on each
     loop iteration, and the length of the string changes as the number of
     digits in the value increases. */
     sprintf( cString, "%lu", ( unsigned long ) ulNextValue );
-    
-    /* Send the value from this Core 1 to the Core 2 via the message buffer. */ 
+
+    /* Send the value from this Core 1 to the Core 2 via the message buffer. */
     xMessageBufferSend( xCoreMessageBuffer, ( void * ) cString, strlen( cString ), 0 );
-    
+
     /* Delay before repeating with a different and potentially different
     length string. */
     vTaskDelay( xDelay );
-    
+
     /* reset the message buffer to its default value */
     xMessageBufferReset(xCoreMessageBuffer);
-        
+
     ulNextValue++;
   }
 }
@@ -163,7 +160,7 @@ void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, uint32_
 
 /**
   * @brief  System Clock Configuration
-  *         The system Clock is configured as follow : 
+  *         The system Clock is configured as follow :
   *            System Clock source            = PLL (HSE BYPASS)
   *            SYSCLK(Hz)                     = 400000000 (CPU Clock)
   *            HCLK(Hz)                       = 200000000 (Cortex-M4 CPU, Bus matrix Clocks)
@@ -262,7 +259,7 @@ static void CPU_CACHE_Enable(void)
 }
 
 /**
-  * @brief  Configure the MPU attributes as Not Cacheable for Internal D3SRAM.
+  * @brief  Configure the MPU attributes as Cacheable for Internal D3SRAM.
   * @note   The Base Address is 0x38000000 (D3_SRAM_BASE).
   *         The Configured Region Size is 64KB because same as D3SRAM size.
   * @param  None
@@ -271,7 +268,7 @@ static void CPU_CACHE_Enable(void)
 static void MPU_Config(void)
 {
   MPU_Region_InitTypeDef MPU_InitStruct;
-  
+
   /* Disable the MPU */
   HAL_MPU_Disable();
 
@@ -290,13 +287,13 @@ static void MPU_Config(void)
 
   HAL_MPU_ConfigRegion(&MPU_InitStruct);
 
-  /* Configure the MPU attributes as WT for SRAM */
+  /* Configure the MPU attributes as WB for SRAM */
   MPU_InitStruct.Enable = MPU_REGION_ENABLE;
   MPU_InitStruct.BaseAddress = D3_SRAM_BASE;
   MPU_InitStruct.Size = MPU_REGION_SIZE_64KB;
   MPU_InitStruct.AccessPermission = MPU_REGION_FULL_ACCESS;
   MPU_InitStruct.IsBufferable = MPU_ACCESS_NOT_BUFFERABLE;
-  MPU_InitStruct.IsCacheable = MPU_ACCESS_NOT_CACHEABLE;
+  MPU_InitStruct.IsCacheable = MPU_ACCESS_CACHEABLE;
   MPU_InitStruct.IsShareable = MPU_ACCESS_SHAREABLE;
   MPU_InitStruct.Number = MPU_REGION_NUMBER1;
   MPU_InitStruct.TypeExtField = MPU_TEX_LEVEL0;
@@ -332,7 +329,7 @@ static void Error_Handler(void)
   * @retval None
   */
 void assert_failed(uint8_t *file, uint32_t line)
-{ 
+{
   /* User can add his own implementation to report the file name and line number,
      ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
 

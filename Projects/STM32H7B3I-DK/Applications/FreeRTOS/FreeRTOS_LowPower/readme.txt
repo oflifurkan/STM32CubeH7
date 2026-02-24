@@ -41,7 +41,7 @@ that allows the CPU registers and RAM to retain their state.
 In this example, non-used GPIOs are configured to analog, thus helping to reduce
 the power consumption of the device.
 
-Observed behaviour:
+Observed behavior:
 
 Every 500ms the MCU will come out of the low power state to turn the LED2 on,
 then return to the low power state for 20ms before leaving the low power
@@ -93,7 +93,7 @@ RTOS, FreeRTOS, Threading, Low power, Sleep mode, Queue, Blocked state, Transmit
     - FreeRTOS/FreeRTOS_LowPower/Inc/stm32h7xx_hal_conf.h         HAL Library Configuration file
     - FreeRTOS/FreeRTOS_LowPower/Inc/stm32h7xx_it.h               Interrupt handlers header file
     - FreeRTOS/FreeRTOS_LowPower/Inc/FreeRTOSConfig.h             FreeRTOS Configuration file
-    - FreeRTOS/FreeRTOS_LowPower/Inc/stm32h7b3i_discovery_conf.h    BSP configuration file
+    - FreeRTOS/FreeRTOS_LowPower/Inc/stm32h7b3i_discovery_conf.h  BSP configuration file
 
 @par Hardware and Software environment
 
@@ -109,5 +109,4 @@ In order to make the program work, you must do the following:
  - Rebuild all files and load your image into target memory
  - Run the example
 
-
- */
+*/

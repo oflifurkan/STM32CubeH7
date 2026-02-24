@@ -192,7 +192,7 @@ void COMMAND_Jump(void)
 static void COMMAND_ProgramFlashMemory(void)
 {
   uint8_t readflag = TRUE;
-  uint16_t bytesread = 0;
+  uint32_t bytesread = 0;
   
   /* RAM Address Initialization */
   RamAddress = (uint32_t) &RAM_Buf;

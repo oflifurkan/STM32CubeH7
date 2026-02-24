@@ -31,7 +31,8 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "cmsis_os.h"
+#include "cmsis_os2.h"
+#include "FreeRTOS.h"
 #include "stm32h7b3i_discovery_sd.h"
 #include "stm32h7b3i_discovery.h"
 /* USER CODE END Includes */
@@ -77,5 +78,5 @@ void Error_Handler(void);
 #endif
 
 #endif /* __MAIN_H */
-extern osMessageQId AppliEvent, DiskEvent;
+extern osMessageQueueId_t AppliEvent, DiskEvent;
 

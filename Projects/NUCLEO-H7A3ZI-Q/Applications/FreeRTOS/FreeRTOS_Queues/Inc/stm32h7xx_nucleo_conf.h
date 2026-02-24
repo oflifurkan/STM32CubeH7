@@ -1,4 +1,4 @@
-/** 
+/**
   ******************************************************************************
   * @file    stm32h7xx_nucleo_conf.h
   * @author  MCD Application Team
@@ -15,13 +15,13 @@
   *
   ******************************************************************************
   */
-  
+
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef STM32H7XX_NUCLEO_CONF_H
 #define STM32H7XX_NUCLEO_CONF_H
 
 #ifdef __cplusplus
- extern "C" {
+extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
@@ -30,18 +30,18 @@
 /** @addtogroup BSP
   * @{
   */
-  
+
 /** @addtogroup STM32H7XX_NUCLEO
   * @{
   */
 
 /** @defgroup STM32H7XX_NUCLEO_CONFIG Config
   * @{
-  */ 
-  
+  */
+
 /** @defgroup STM32H7XX_NUCLEO_CONFIG_Exported_Constants Exported Constants
   * @{
-  */ 
+  */
 /* Nucleo pin and part number defines */
 /* Nucleo pin and part number defines */
 #define USE_NUCLEO_144
@@ -62,18 +62,18 @@
 /**
   * @}
   */
-  
+
 /**
   * @}
   */
-  
+
 /**
   * @}
   */
-   
+
 #ifdef __cplusplus
 }
 #endif
-  
+
 #endif /* STM32H7XX_NUCLEO_CONF_H */
 

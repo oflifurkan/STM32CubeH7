@@ -31,13 +31,12 @@ This is a typical application on how to use the STM32H7x USB OTG Host peripheral
 flash disk using the Bulk Only Transfer (BOT) and Small Computer System Interface (SCSI) transparent
 commands combined with a file system FatFs (Middleware component).
 
-At the beginning of the main program the HAL_Init() function is called to reset 
+At the beginning of the main program the HAL_Init() function is called to reset
 all the peripherals, initialize the Flash interface and the systick.
-The SystemClock_Config() function is used to configure the system clock for STM32H750xx Devices :
+The SystemClock_Config() function is used to configure the system clock for STM32H750xx Devices:
 The CPU at 400MHz 
 The HCLK for D1 Domain AXI and AHB3 peripherals , D2 Domain AHB1/AHB2 peripherals and D3 Domain AHB4  peripherals at 200MHz.
-The APB clock dividers for D1 Domain APB3 peripherals, D2 Domain APB1 and APB2 peripherals and D3 Domain APB4 peripherals to  run at 100MHz. 
-
+The APB clock dividers for D1 Domain APB3 peripherals, D2 Domain APB1 and APB2 peripherals and D3 Domain APB4 peripherals to  run at 100MHz.
 
 The Full Speed (FS) USB module uses
 internally a 48-MHz clock which is coming from PLL3.
@@ -59,7 +58,6 @@ This application is based on read/write file and explore the USB flash disk cont
 For more details about the STM32Cube USB Host library, please refer to UM1720
 "STM32Cube USB Host library".
 
-
 @par USB Library Configuration
 
 To select the appropriate USB Core to work with, user must add the following macro defines within the
@@ -77,12 +75,10 @@ requirements, such as:
    By default debug messages are displayed on the debugger IO terminal; to redirect the Library
    messages on the LCD screen, lcd_log.c driver need to be added to the application sources.
 
-
 @par Keywords
 
 Connectivity, USB_Host, USB, MSC, Mass Storage, Full Speed, High Speed, BOT, SCSI, Removable drive,
 File system, Write, Read, Format
-
 
 @Note If the  application is using the DTCM/ITCM memories (@0x20000000/ 0x0000000: not cacheable and only accessible
       by the Cortex M7 and the  MDMA), no need for cache maintenance when the Cortex M7 and the MDMA access these RAMs.
@@ -91,7 +87,7 @@ File system, Write, Read, Format
               - Add a cache maintenance mechanism to ensure the cache coherence between CPU and other masters(DMAs,DMA2D,LTDC,MDMA).
               - The addresses and the size of cacheable buffers (shared between CPU and other masters)
                 must be	properly defined to be aligned to L1-CACHE line size (32 bytes).
- 
+
 @Note It is recommended to enable the cache and maintain its coherence.
       Depending on the use case it is also possible to configure the cache attributes using the MPU.
       Please refer to the AN4838 "Managing memory protection unit (MPU) in STM32 MCUs"
@@ -128,32 +124,35 @@ File system, Write, Read, Format
 
 @par How to use it ? :
 
-In order to make the program work, you must do the following :
+To configure STM32CubeIDE Debug Configuration, you must do the following:
 
-  1. Select required configuration in memory.h in Templates\ExtMem_Boot\Inc template.
-     The default configuration is the right one: 
-     - DATA_AREA set to USE_INTERNAL_SRAM
-     - CODE_AREA set to USE_QSPI
-  2. Program the internal Flash with the ExtMem_Boot (see below).
-  3. Program the external memory with this application (see below).
-  4. Start debugging user example or reset for free running.
+  1. Upload the ExtMem_Boot template
+  2. Add the adequate external loader (MT25TL01G_STM32H750B-DISCO file) in Project -> Debugger Configuration -> External Loaders.
+  3. Add in the startup the ExtMem_Boot in Project->Debugger Configuration
+  4. Move up the application in the startup
 
-In order to load the ExtMem_Boot code :
-   - Open your preferred toolchain :
-      - Open the Project
-      - Rebuild all files
-      - Load project image
-      
-In order to load this application to the external memory :
- - Open your preferred toolchain 
- - Rebuild all files. 
- - Run & debug the program:
-   - Using EWARM or MDK-ARM : Load project image from the IDE: Project->Debug
-   - Using STM32CubeIDE :
-       - Open the STM32CubeProgrammer tool
-       - Select the QSPI external flash loader "MT25TL01G_STM32H750B-DISCO" 
-       - From Erasing & Programming menu, browse and open the output binary file relative to this application
-       - Load the file into the external QSPI flash using "Start Programming" at the address APPLICATION_ADDRESS (0x90000000)
+In order to make the program work, you must do the following:
 
+  1. Upload the template ExtMem_Boot
+  2. Program the internal Flash with the ExtMem_Boot.
+  3. Program the external memory with this application.
+  4. Start debugging this application or reset the board for free running.
 
- */
+  * In order to load the ExtMem_Boot code:
+    - Open your preferred toolchain:
+    - Open the Project
+    - Rebuild all files
+    - Load project image
+
+  * In order to load the application to the external Flash memory:
+
+    1. Select required configuration in memory.h in Templates\ExtMem_Boot\Inc template.
+       The default configuration is:
+       - DATA_AREA set to USE_INTERNAL_SRAM
+       - CODE_AREA set to USE_QSPI
+    2. Open your preferred toolchain
+       - Open the Project
+       - Rebuild all files
+       - Run & debug the program
+
+*/

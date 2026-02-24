@@ -95,6 +95,7 @@ void Touchscreen_demo1(void)
   uint8_t state = 0;
   uint32_t ts_status = BSP_ERROR_NONE;
   uint32_t x_size, y_size;
+  int32_t probeStatus;
 
   BSP_LCD_GetXSize(0, &x_size);
   BSP_LCD_GetYSize(0, &y_size);
@@ -102,7 +103,19 @@ void Touchscreen_demo1(void)
 
   hTS.Width = x_size;
   hTS.Height = y_size;
-  hTS.Orientation = TS_SWAP_XY;
+  probeStatus = GT911_Probe(TS_INSTANCE);
+  if (probeStatus == BSP_ERROR_NONE)
+  {
+    hTS.Orientation = TS_SWAP_NONE;
+  }
+  else
+  {
+    probeStatus = FT5336_Probe(TS_INSTANCE);
+    if (probeStatus == BSP_ERROR_NONE)
+    {
+      hTS.Orientation = TS_SWAP_XY;
+    }
+  }
   hTS.Accuracy = 0;
 
   /* Touchscreen initialization */
@@ -201,17 +214,30 @@ void Touchscreen_demo2(void)
   uint32_t ts_status = BSP_ERROR_NONE;
   uint32_t x_size, y_size;
   ButtonState = 0;
+  int32_t probeStatus;
   BSP_LCD_GetXSize(0, &x_size);
   BSP_LCD_GetYSize(0, &y_size);
 
   hTS.Width = x_size;
   hTS.Height = y_size;
-  hTS.Orientation = TS_SWAP_XY;
+
+  probeStatus = GT911_Probe(TS_INSTANCE);
+  if (probeStatus == BSP_ERROR_NONE)
+  {
+    hTS.Orientation = TS_SWAP_NONE;
+  }
+  else
+  {
+    probeStatus = FT5336_Probe(TS_INSTANCE);
+    if (probeStatus == BSP_ERROR_NONE)
+    {
+      hTS.Orientation = TS_SWAP_XY;
+    }
+  }
   hTS.Accuracy = 0;
 
   /* Touchscreen initialization */
   ts_status = BSP_TS_Init(0, &hTS);
-  ts_status = BSP_TS_GestureConfig(0, &GestureConf);
 
   if(ts_status == BSP_ERROR_NONE)
   {
@@ -360,13 +386,26 @@ void Touchscreen_demo3(void)
   ButtonState = 0;
   TSInterruptTest = 1;
   uint32_t x_size, y_size;
+  int32_t probeStatus;
 
   BSP_LCD_GetXSize(0, &x_size);
   BSP_LCD_GetYSize(0, &y_size);
 
   hTS.Width = x_size;
   hTS.Height = y_size;
-  hTS.Orientation = TS_SWAP_XY;
+  probeStatus = GT911_Probe(TS_INSTANCE);
+  if (probeStatus == BSP_ERROR_NONE)
+  {
+    hTS.Orientation = TS_SWAP_NONE;
+  }
+  else
+  {
+    probeStatus = FT5336_Probe(TS_INSTANCE);
+    if (probeStatus == BSP_ERROR_NONE)
+    {
+      hTS.Orientation = TS_SWAP_XY;
+    }
+  }
   hTS.Accuracy = 0;
 
   /* Touchscreen initialization */

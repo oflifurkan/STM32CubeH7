@@ -34,7 +34,7 @@ The APB clock dividers for D1 Domain APB3 peripherals, D2 Domain APB1 and APB2 p
 The main() function configures the LPTIMER and goes in STOP mode.
 In order to start the timer a first trigger is needed on (PG.14)(LPTIM_ETR).
 Any successive trigger event on (PG.14) will reset the counter and the timer 
-will restart. The timeout value corresponds to the compare value (32768).
+will restart. The timeout value corresponds to approximately 1s.
 If after the first trigger no other trigger occurs within the expected time frame, 
 the MCU is woken-up by the compare match event and LED2 toggles.
 

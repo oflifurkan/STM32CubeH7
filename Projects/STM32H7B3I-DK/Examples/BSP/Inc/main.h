@@ -91,6 +91,9 @@ extern TS_State_t  TS_State;
 /* AUDIO definitions */
 #define AUDIO_BUFFER_SIZE            8192
 
+/* Touchscreen instance identifier -------------------------------------------*/
+#define TS_INSTANCE       0U
+
 /* Exported macro ------------------------------------------------------------*/
 #define COUNT_OF_EXAMPLE(x)    (sizeof(x)/sizeof(BSP_DemoTypedef))
 
